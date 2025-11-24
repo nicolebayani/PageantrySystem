@@ -10,18 +10,16 @@ if ($_POST) {
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $full_name = trim($_POST['full_name']);
-    $role = $_POST['role'];
     $email = trim($_POST['email']);
+    $role = 'judge'; // Set default role to judge
     
     // Validation
-    if (empty($username) || empty($password) || empty($full_name) || empty($role)) {
+    if (empty($username) || empty($password) || empty($full_name)) {
         $error = 'All fields are required';
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters long';
     } elseif ($password !== $confirm_password) {
         $error = 'Passwords do not match';
-    } elseif (!in_array($role, ['admin', 'judge'])) {
-        $error = 'Invalid role selected';
     } else {
         $database = new Database();
         $db = $database->getConnection();
@@ -174,25 +172,7 @@ if ($_POST) {
                     <?php endif; ?>
                     
                     <form method="POST" id="registerForm">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-user-tag"></i> Select Role
-                            </label>
-                            <div class="role-selector">
-                                <label class="role-option admin-role" for="admin">
-                                    <input type="radio" name="role" value="admin" id="admin" required>
-                                    <i class="fas fa-crown role-icon"></i>
-                                    <div class="fw-bold">Administrator</div>
-                                    <small class="text-muted">Manage system & view results</small>
-                                </label>
-                                <label class="role-option judge-role" for="judge">
-                                    <input type="radio" name="role" value="judge" id="judge" required>
-                                    <i class="fas fa-gavel role-icon"></i>
-                                    <div class="fw-bold">Judge</div>
-                                    <small class="text-muted">Score candidates</small>
-                                </label>
-                            </div>
-                        </div>
+                        <input type="hidden" name="role" value="judge">
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -261,16 +241,6 @@ if ($_POST) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Role selection animation
-        document.querySelectorAll('.role-option').forEach(option => {
-            option.addEventListener('click', function() {
-                // Remove selected class from all options
-                document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('selected'));
-                // Add selected class to clicked option
-                this.classList.add('selected');
-            });
-        });
-        
         // Password confirmation validation
         document.getElementById('confirm_password').addEventListener('input', function() {
             const password = document.getElementById('password').value;

@@ -74,8 +74,8 @@ $userRole = isset($_SESSION['role']) ? $_SESSION['role'] : '';
     </nav>
 
     <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
                 <div class="hero-section">
                     <h1 class="display-4 mb-4">
                         <i class="fas fa-crown text-warning"></i>
@@ -84,40 +84,13 @@ $userRole = isset($_SESSION['role']) ? $_SESSION['role'] : '';
                     <p class="lead mb-4">Professional scoring and results management for beauty pageants</p>
                     
                     <?php if (!$isLoggedIn): ?>
-                        <div class="row mt-5">
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-user-shield text-primary"></i> Admin Access
-                                        </h5>
-                                        <p class="card-text">Manage candidates, criteria, and view results</p>
-                                        <a href="auth/login.php" class="btn btn-primary">Admin Login</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-gavel text-success"></i> Judge Access
-                                        </h5>
-                                        <p class="card-text">Score candidates based on criteria</p>
-                                        <a href="auth/login.php" class="btn btn-success">Judge Login</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-user-plus text-warning"></i> New User
-                                        </h5>
-                                        <p class="card-text">Create your admin or judge account</p>
-                                        <a href="auth/register.php" class="btn btn-warning">Register Now</a>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="d-grid gap-2 col-md-4 mx-auto mt-5">
+                            <a href="auth/login.php" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to Continue
+                            </a>
+                            <p class="text-muted mt-2">
+                                Don't have an account? <a href="auth/register.php">Register here</a>
+                            </p>
                         </div>
                     <?php else: ?>
                         <?php if ($userRole === 'admin'): ?>
