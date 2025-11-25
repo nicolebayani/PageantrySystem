@@ -18,7 +18,7 @@ $tables = [
             role ENUM('admin', 'judge') NOT NULL,
             full_name VARCHAR(100) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )",
+        ) ENGINE=InnoDB",
         
     "candidates" => "
         CREATE TABLE IF NOT EXISTS candidates (
@@ -28,7 +28,7 @@ $tables = [
             description TEXT,
             photo VARCHAR(255),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )",
+        ) ENGINE=InnoDB",
         
     "criteria" => "
         CREATE TABLE IF NOT EXISTS criteria (
@@ -37,7 +37,7 @@ $tables = [
             percentage DECIMAL(5,2) NOT NULL,
             description TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )",
+        ) ENGINE=InnoDB",
         
     "scores" => "
         CREATE TABLE IF NOT EXISTS scores (
@@ -47,11 +47,11 @@ $tables = [
             criteria_id INT NOT NULL,
             score DECIMAL(5,2) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (judge_id) REFERENCES users(id),
-            FOREIGN KEY (candidate_id) REFERENCES candidates(id),
-            FOREIGN KEY (criteria_id) REFERENCES criteria(id),
+            FOREIGN KEY (judge_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+            FOREIGN KEY (criteria_id) REFERENCES criteria(id) ON DELETE CASCADE,
             UNIQUE KEY unique_score (judge_id, candidate_id, criteria_id)
-        )"
+        ) ENGINE=InnoDB"
 ];
 
 // Execute table creation
@@ -63,12 +63,8 @@ foreach ($tables as $tableName => $sql) {
         echo "⚠️ Error with $tableName table: " . $e->getMessage() . "<br>";
     }
 }
-";
 
 try {
-    $db->exec($sql);
-    echo "Tables created successfully!<br>";
-    
     // Create admin user with correct password hash
     $adminPassword = password_hash('admin123', PASSWORD_DEFAULT);
     $judgePassword = password_hash('judge123', PASSWORD_DEFAULT);

@@ -5,7 +5,7 @@ require_once '../config/database.php';
 $error = '';
 
 if ($_POST) {
-    $username = $_POST['username'];
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
     
     $database = new Database();
@@ -17,6 +17,7 @@ if ($_POST) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user && password_verify($password, $user['password'])) {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
