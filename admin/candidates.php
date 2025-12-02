@@ -160,66 +160,134 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             <div class="col-md-8">
                 <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5><i class="fas fa-users"></i> Current Candidates</h5>
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i> Current Candidates</h5>
+                        <span class="badge bg-white text-success"><?php echo count($candidates); ?> Candidates</span>
                     </div>
                     <div class="card-body">
                         <?php echo $message; ?>
                         
                         <?php if (empty($candidates)): ?>
-                            <div class="text-center text-muted">
-                                <i class="fas fa-user-slash fa-3x mb-3"></i>
-                                <p>No candidates added yet.</p>
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-user-slash fa-4x mb-3 opacity-50"></i>
+                                <p class="h5">No candidates added yet.</p>
+                                <p class="text-muted">Add your first candidate using the form on the left</p>
                             </div>
                         <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Number</th>
-                                            <th>Photo</th>
-                                            <th>Name</th>
-                                            <th>Age</th>
-                                            <th>Description</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($candidates as $candidate): ?>
-                                            <tr>
-                                                <td><strong><?php echo htmlspecialchars($candidate['candidate_number']); ?></strong></td>
-                                                <td>
-                                                    <?php if ($candidate['photo']): ?>
-                                                        <img src="../uploads/candidates/<?php echo htmlspecialchars($candidate['photo']); ?>" 
-                                                             alt="Candidate Photo" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                                                    <?php else: ?>
-                                                        <div class="bg-light d-flex align-items-center justify-content-center" 
-                                                             style="width: 50px; height: 50px; border-radius: 0.375rem;">
-                                                            <i class="fas fa-user text-muted"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td><?php echo htmlspecialchars($candidate['name']); ?></td>
-                                                <td><?php echo $candidate['age']; ?></td>
-                                                <td><?php echo htmlspecialchars(substr($candidate['description'], 0, 50)) . (strlen($candidate['description']) > 50 ? '...' : ''); ?></td>
-                                                <td>
-                                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
-                                                        <input type="hidden" name="action" value="delete">
-                                                        <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
-                                                        <button type="submit" class="btn btn-danger btn-sm">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                            <div class="row g-4">
+                                <?php foreach ($candidates as $candidate): ?>
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <div class="candidate-card card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                            <div class="position-relative">
+                                                <?php if ($candidate['photo']): ?>
+                                                    <img src="../uploads/candidates/<?php echo htmlspecialchars($candidate['photo']); ?>" 
+                                                         class="card-img-top" alt="<?php echo htmlspecialchars($candidate['name']); ?>"
+                                                         style="height: 200px; object-fit: cover; border-radius: 0.5rem 0.5rem 0 0;">
+                                                <?php else: ?>
+                                                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                         style="height: 200px; border-radius: 0.5rem 0.5rem 0 0; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);">
+                                                        <i class="fas fa-user text-muted fa-5x opacity-25"></i>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="candidate-number">
+                                                    <span class="badge rounded-pill bg-primary">#<?php echo htmlspecialchars($candidate['candidate_number']); ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="card-body position-relative">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h5 class="card-title mb-0"><?php echo htmlspecialchars($candidate['name']); ?></h5>
+                                                    <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
+                                                </div>
+                                                <p class="card-text text-muted small mb-3">
+                                                    <?php 
+                                                    $desc = trim($candidate['description']);
+                                                    echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
+                                                    ?>
+                                                </p>
+                                                <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Candidate">
+                                                        <i class="fas fa-trash-alt me-1"></i> Remove
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
+            
+            <style>
+                .candidate-card {
+                    transition: all 0.3s ease;
+                    border-radius: 0.75rem;
+                    overflow: hidden;
+                    position: relative;
+                    background: #fff;
+                }
+                
+                .candidate-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+                }
+                
+                .candidate-number {
+                    position: absolute;
+                    top: 1rem;
+                    left: 1rem;
+                }
+                
+                .candidate-number .badge {
+                    font-size: 0.8rem;
+                    padding: 0.35em 0.65em;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }
+                
+                .card-title {
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+                
+                .transition-all {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .hover-shadow:hover {
+                    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+                }
+                
+                /* Animation for card entrance */
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .candidate-card {
+                    animation: fadeInUp 0.5s ease-out forwards;
+                    opacity: 0;
+                }
+                
+                /* Staggered animation delay */
+                <?php 
+                $delay = 0;
+                foreach ($candidates as $index => $candidate): 
+                    $delay = $index * 0.1;
+                ?>
+                    .candidate-card:nth-child(<?php echo $index + 1; ?>) {
+                        animation-delay: <?php echo $delay; ?>s;
+                    }
+                <?php endforeach; ?>
+            </style>
         </div>
     </div>
 
