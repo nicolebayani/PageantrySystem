@@ -262,14 +262,14 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                         <a href="candidates.php" class="quick-action-btn btn-candidates">
                             <i class="fas fa-users"></i> Manage Candidates
                         </a>
-                        <a href="criteria.php" class="quick-action-btn btn-criteria">
-                            <i class="fas fa-list-check"></i> Setup Criteria
+                        <a href="criteria_overview.php" class="quick-action-btn btn-criteria">
+                            <i class="fas fa-list-check"></i> View Criteria
                         </a>
                         <a href="judges.php" class="quick-action-btn btn-judges">
                             <i class="fas fa-gavel"></i> Manage Judges
                         </a>
                         <a href="rounds.php" class="quick-action-btn btn-rounds">
-                            <i class="fas fa-layer-group"></i> Manage Rounds
+                            <i class="fas fa-layer-group"></i> Manage Segments
                         </a>
                         <a href="results.php" class="quick-action-btn btn-results">
                             <i class="fas fa-trophy"></i> View Results

@@ -24,7 +24,7 @@ if ($_POST) {
                 $name = $_POST['name'];
                 $description = $_POST['description'];
 
-                $query = 'INSERT INTO rounds (name, description) VALUES (?, ?)';
+                $query = 'INSERT INTO segments (name, description) VALUES (?, ?)';
                 $stmt = $db->prepare($query);
                 if ($stmt->execute([$name, $description])) {
                     $message = '<div class="alert alert-success">Round added successfully!</div>';
@@ -38,7 +38,7 @@ if ($_POST) {
                 $name = $_POST['name'];
                 $description = $_POST['description'];
 
-                $query = 'UPDATE rounds SET name = ?, description = ? WHERE id = ?';
+                $query = 'UPDATE segments SET name = ?, description = ? WHERE id = ?';
                 $stmt = $db->prepare($query);
                 if ($stmt->execute([$name, $description, $id])) {
                     $message = '<div class="alert alert-success">Round updated successfully!</div>';
@@ -49,7 +49,7 @@ if ($_POST) {
 
             case 'delete':
                 $id = $_POST['id'];
-                $query = 'DELETE FROM rounds WHERE id = ?';
+                $query = 'DELETE FROM segments WHERE id = ?';
                 $stmt = $db->prepare($query);
                 if ($stmt->execute([$id])) {
                     $message = '<div class="alert alert-success">Round deleted successfully!</div>';
@@ -61,8 +61,8 @@ if ($_POST) {
     }
 }
 
-// Get all rounds
-$query = 'SELECT * FROM rounds ORDER BY id ASC';
+// Get all segments
+$query = 'SELECT * FROM segments ORDER BY id ASC';
 $stmt = $db->prepare($query);
 $stmt->execute();
 $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -73,7 +73,7 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Rounds - Pageantry System</title>
+    <title>Manage Segments - Pageantry System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
@@ -111,13 +111,13 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h5><i class="fas fa-plus"></i> Add New Round</h5>
+                        <h5><i class="fas fa-plus"></i> Add New Segment</h5>
                     </div>
                     <div class="card-body">
                         <form method="POST" id="roundForm">
                             <input type="hidden" name="action" value="add">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Round Name</label>
+                                <label for="name" class="form-label">Segment Name</label>
                                 <input type="text" class="form-control" id="name" name="name" required>
                             </div>
                             <div class="mb-3">
@@ -125,7 +125,7 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-plus"></i> Add Round
+                                <i class="fas fa-plus"></i> Add Segment
                             </button>
                         </form>
                     </div>
@@ -135,7 +135,7 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h5><i class="fas fa-layer-group"></i> Current Rounds</h5>
+                        <h5><i class="fas fa-layer-group"></i> Current Segments</h5>
                     </div>
                     <div class="card-body">
                         <?php echo $message; ?>
@@ -152,6 +152,7 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <tr>
                                             <th>Name</th>
                                             <th>Description</th>
+                                            <th>Criteria</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -160,6 +161,11 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <tr>
                                                 <td><?php echo htmlspecialchars($round['name']); ?></td>
                                                 <td><?php echo htmlspecialchars(substr($round['description'], 0, 50)) . '...'; ?></td>
+                                                <td>
+                                                    <a href="criteria.php?round_id=<?php echo $round['id']; ?>" class="btn btn-info btn-sm">
+                                                        <i class="fas fa-list-check"></i> Setup Criteria
+                                                    </a>
+                                                </td>
                                                 <td>
                                                     <button class="btn btn-warning btn-sm" onclick='editRound(<?php echo json_encode($round); ?>)'>
                                                         <i class="fas fa-edit"></i>
