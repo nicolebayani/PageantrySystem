@@ -5,9 +5,10 @@ USE pageantry_system;
 -- Drop existing tables in correct order to avoid foreign key constraints
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS scores;
+DROP TABLE IF EXISTS criteria;
+DROP TABLE IF EXISTS segments;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS candidates;
-DROP TABLE IF EXISTS criteria;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Users table (for admin and judges)
@@ -31,13 +32,24 @@ CREATE TABLE IF NOT EXISTS candidates (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Segments table (for pageantry rounds)
+CREATE TABLE IF NOT EXISTS segments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Criteria table
 CREATE TABLE IF NOT EXISTS criteria (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    round_id INT,
     name VARCHAR(100) NOT NULL,
     percentage DECIMAL(5,2) NOT NULL,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (round_id) REFERENCES segments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Scores table

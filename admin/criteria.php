@@ -151,6 +151,7 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="../index.php">Dashboard</a>
+                <a class="nav-link" href="rounds.php">Rounds</a>
                 <a class="nav-link" href="candidates.php">Candidates</a>
                 <a class="nav-link" href="judges.php">Judges</a>
                 <a class="nav-link" href="results.php">Results</a>
