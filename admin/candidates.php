@@ -16,6 +16,23 @@ $currentSettings = $settings->getAll();
 
 $message = '';
 
+if (!isset($_GET['pageant_id'])) {
+    header('Location: pageants.php');
+    exit();
+}
+$pageant_id = $_GET['pageant_id'];
+
+// Get pageant details
+$pageantQuery = "SELECT name FROM pageants WHERE id = ?";
+$pageantStmt = $db->prepare($pageantQuery);
+$pageantStmt->execute([$pageant_id]);
+$pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$pageant) {
+    header('Location: pageants.php');
+    exit();
+}
+
 // Handle form submissions
 if ($_POST) {
     if (isset($_POST['action'])) {
@@ -52,9 +69,10 @@ if ($_POST) {
                     }
                 }
                 
-                $query = "INSERT INTO candidates (candidate_number, name, age, description, photo) VALUES (?, ?, ?, ?, ?)";
+                $pageant_id_post = $_POST['pageant_id'];
+                $query = "INSERT INTO candidates (pageant_id, candidate_number, name, age, description, photo) VALUES (?, ?, ?, ?, ?, ?)";
                 $stmt = $db->prepare($query);
-                if ($stmt->execute([$candidate_number, $name, $age, $description, $photo])) {
+                if ($stmt->execute([$pageant_id_post, $candidate_number, $name, $age, $description, $photo])) {
                     if (!$message) {
                         $message = '<div class="alert alert-success">Candidate added successfully!</div>';
                     }
@@ -77,10 +95,10 @@ if ($_POST) {
     }
 }
 
-// Get all candidates
-$query = "SELECT * FROM candidates ORDER BY candidate_number";
+// Get all candidates for the specific pageant
+$query = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY candidate_number";
 $stmt = $db->prepare($query);
-$stmt->execute();
+$stmt->execute([$pageant_id]);
 $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -89,7 +107,7 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Candidates - Pageantry System</title>
+    <title>Manage Candidates for <?php echo htmlspecialchars($pageant['name']); ?> - Pageantry System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
@@ -112,6 +130,7 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </span>
             </a>
             <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="pageants.php">Pageants</a>
                 <a class="nav-link" href="dashboard.php">Dashboard</a>
                 <a class="nav-link" href="settings.php"><i class="fas fa-cog"></i> Settings</a>
                 <a class="nav-link" href="../auth/logout.php">Logout</a>
@@ -128,7 +147,8 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data">
-                            <input type="hidden" name="action" value="add">
+                                                        <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
                             <div class="mb-3">
                                 <label for="candidate_number" class="form-label">Candidate Number</label>
                                 <input type="text" class="form-control" id="candidate_number" name="candidate_number" required placeholder="e.g., 001, 002, etc.">
@@ -161,7 +181,7 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-users me-2"></i> Current Candidates</h5>
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i> Candidates for <?php echo htmlspecialchars($pageant['name']); ?></h5>
                         <span class="badge bg-white text-success"><?php echo count($candidates); ?> Candidates</span>
                     </div>
                     <div class="card-body">

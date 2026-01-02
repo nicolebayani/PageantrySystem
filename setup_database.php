@@ -16,7 +16,8 @@ try {
     $conn = new PDO("mysql:host=$host", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Create database
+    // Drop and Create database
+    $conn->exec("DROP DATABASE IF EXISTS $dbname");
     $conn->exec("CREATE DATABASE IF NOT EXISTS $dbname");
     echo "✅ Database '$dbname' created/verified<br>";
     
@@ -29,6 +30,15 @@ try {
     
     // Step 3: Create tables
     echo "<h3>Step 3: Creating Tables</h3>";
+
+    // Drop tables in reverse order of creation to avoid foreign key issues
+    $db->exec("DROP TABLE IF EXISTS scores");
+    $db->exec("DROP TABLE IF EXISTS candidates");
+    $db->exec("DROP TABLE IF EXISTS criteria");
+    $db->exec("DROP TABLE IF EXISTS pageants");
+    $db->exec("DROP TABLE IF EXISTS settings");
+    $db->exec("DROP TABLE IF EXISTS users");
+    echo "✅ Existing tables dropped for a clean setup<br>";
     
     // Users table
     $userTable = "
@@ -39,20 +49,38 @@ try {
         role ENUM('admin', 'judge') NOT NULL,
         full_name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )";
+    ) ENGINE=InnoDB";
     $db->exec($userTable);
     echo "✅ Users table created<br>";
+
+    // Pageants table
+    $pageantsTable = "
+    CREATE TABLE IF NOT EXISTS pageants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        primary_color VARCHAR(7) DEFAULT '#667eea',
+        secondary_color VARCHAR(7) DEFAULT '#764ba2',
+        accent_color VARCHAR(7) DEFAULT '#ffd700',
+        logo_image VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB";
+    $db->exec($pageantsTable);
+    echo "✅ Pageants table created<br>";
     
     // Candidates table
     $candidatesTable = "
     CREATE TABLE IF NOT EXISTS candidates (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        pageant_id INT NOT NULL,
+        candidate_number VARCHAR(50) NOT NULL,
         name VARCHAR(100) NOT NULL,
         age INT,
         description TEXT,
         photo VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )";
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
+        UNIQUE KEY (pageant_id, candidate_number)
+    ) ENGINE=InnoDB";
     $db->exec($candidatesTable);
     echo "✅ Candidates table created<br>";
     
@@ -64,7 +92,7 @@ try {
         percentage DECIMAL(5,2) NOT NULL,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )";
+    ) ENGINE=InnoDB";
     $db->exec($criteriaTable);
     echo "✅ Criteria table created<br>";
     
@@ -81,7 +109,7 @@ try {
         FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
         FOREIGN KEY (criteria_id) REFERENCES criteria(id) ON DELETE CASCADE,
         UNIQUE KEY unique_score (judge_id, candidate_id, criteria_id)
-    )";
+    ) ENGINE=InnoDB";
     $db->exec($scoresTable);
     echo "✅ Scores table created<br>";
     
@@ -93,7 +121,7 @@ try {
         setting_value TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )";
+    ) ENGINE=InnoDB";
     $db->exec($settingsTable);
     echo "✅ Settings table created<br>";
     
@@ -124,6 +152,19 @@ try {
         echo "✅ Judge account created (username: judge1, password: judge123)<br>";
     } else {
         echo "ℹ️ Judge account already exists<br>";
+    }
+
+    // Check if pageantry_admin exists
+    $checkPageantryAdmin = $db->prepare("SELECT COUNT(*) FROM users WHERE username = 'pageantry_admin'");
+    $checkPageantryAdmin->execute();
+
+    if ($checkPageantryAdmin->fetchColumn() == 0) {
+        $pageantryAdminPassword = password_hash('123123', PASSWORD_DEFAULT);
+        $insertPageantryAdmin = $db->prepare("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, ?, ?)");
+        $insertPageantryAdmin->execute(['pageantry_admin', $pageantryAdminPassword, 'admin', 'Pageantry Admin']);
+        echo "✅ Pageantry Admin account created (username: pageantry_admin, password: 123123)<br>";
+    } else {
+        echo "ℹ️ Pageantry Admin account already exists<br>";
     }
     
     // Step 5: Insert default criteria

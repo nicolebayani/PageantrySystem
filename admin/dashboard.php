@@ -258,8 +258,8 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                 <div class="dashboard-card p-4">
                     <h4 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h4>
                     <div class="text-center">
-                        <a href="candidates.php" class="quick-action-btn btn-candidates">
-                            <i class="fas fa-users"></i> Manage Candidates
+                        <a href="pageants.php" class="quick-action-btn btn-candidates">
+                            <i class="fas fa-crown"></i> Manage Pageants
                         </a>
                         <a href="criteria.php" class="quick-action-btn btn-criteria">
                             <i class="fas fa-list-check"></i> Setup Criteria
