@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 $database = new Database();
 $db = $database->getConnection();
+
 $settings = new Settings($db);
 $currentSettings = $settings->getAll();
 
@@ -59,6 +60,17 @@ if ($_POST) {
                 break;
         }
     }
+}
+
+// Verify 'segments' table exists before querying
+try {
+    $db->query("SELECT 1 FROM segments LIMIT 1");
+} catch (PDOException $e) {
+    die("<div style='background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px;'>"
+        . "<strong>Fatal Error:</strong> The 'segments' table is missing from the database.<br>"
+        . "Please run the database setup script to create it.<br><br>"
+        . "<a href='../setup_database.php' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Run Setup Script</a>"
+        . "</div>");
 }
 
 // Get all segments

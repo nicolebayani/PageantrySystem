@@ -147,7 +147,9 @@ $currentSettings = $settings->getAll();
                                 </td>
                                 <td>
                                     <a href="edit_pageant.php?id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                    <a href="candidates.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-info">Add Candidates</a>
+                                    <a href="candidates.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-info">Candidates</a>
+                                    <a href="criteria.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-secondary">Criteria</a>
+                                    <a href="rounds.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-warning">Segments</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

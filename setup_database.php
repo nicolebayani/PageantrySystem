@@ -12,6 +12,7 @@ try {
     $password = '';
     $dbname = 'pageantry_system';
     
+    echo "<div style='background: #fff3cd; padding: 10px; border: 1px solid #ffeeba; margin-bottom: 15px;'><strong>Debugging Info:</strong><br>Host: $host<br>DB Name: $dbname<br>User: $username</div>";
     echo "<h3>Step 1: Creating Database</h3>";
     $conn = new PDO("mysql:host=$host", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -35,6 +36,7 @@ try {
     $db->exec("DROP TABLE IF EXISTS scores");
     $db->exec("DROP TABLE IF EXISTS candidates");
     $db->exec("DROP TABLE IF EXISTS criteria");
+    $db->exec("DROP TABLE IF EXISTS segments");
     $db->exec("DROP TABLE IF EXISTS pageants");
     $db->exec("DROP TABLE IF EXISTS settings");
     $db->exec("DROP TABLE IF EXISTS users");
@@ -83,15 +85,29 @@ try {
     ) ENGINE=InnoDB";
     $db->exec($candidatesTable);
     echo "✅ Candidates table created<br>";
+
+    // Segments table
+    $segmentsTable = "
+    CREATE TABLE IF NOT EXISTS segments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB";
+    $db->exec($segmentsTable);
+    echo "✅ Segments table created<br>";
     
     // Criteria table
     $criteriaTable = "
     CREATE TABLE IF NOT EXISTS criteria (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        round_id INT,
         name VARCHAR(100) NOT NULL,
         percentage DECIMAL(5,2) NOT NULL,
         description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (round_id) REFERENCES segments(id) ON DELETE CASCADE
     ) ENGINE=InnoDB";
     $db->exec($criteriaTable);
     echo "✅ Criteria table created<br>";
@@ -124,6 +140,21 @@ try {
     ) ENGINE=InnoDB";
     $db->exec($settingsTable);
     echo "✅ Settings table created<br>";
+
+    // Step 3.5: Verify table creation
+    echo "<h3>Step 3.5: Verifying Table Creation</h3>";
+    $tablesStmt = $db->query("SHOW TABLES");
+    $tables = $tablesStmt->fetchAll(PDO::FETCH_COLUMN);
+    if (empty($tables)) {
+        echo "❌ No tables found in the database.<br>";
+    } else {
+        echo "Tables found in '{$dbname}':<br><ul>";
+        foreach ($tables as $table) {
+            echo "<li>" . htmlspecialchars($table) . "</li>";
+        }
+        echo "</ul>";
+    }
+
     
     // Step 4: Create user accounts
     echo "<h3>Step 4: Creating User Accounts</h3>";

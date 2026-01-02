@@ -186,7 +186,6 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                 </span>
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="settings.php"><i class="fas fa-cog"></i> Settings</a>
                 <span class="nav-link">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                 <a class="nav-link" href="../auth/logout.php">Logout</a>
             </div>
@@ -262,20 +261,11 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                         <a href="pageants.php" class="quick-action-btn btn-candidates">
                             <i class="fas fa-crown"></i> Manage Pageants
                         </a>
-                        <a href="criteria_overview.php" class="quick-action-btn btn-criteria">
-                            <i class="fas fa-list-check"></i> View Criteria
-                        </a>
                         <a href="judges.php" class="quick-action-btn btn-judges">
                             <i class="fas fa-gavel"></i> Manage Judges
                         </a>
-                        <a href="rounds.php" class="quick-action-btn btn-rounds">
-                            <i class="fas fa-layer-group"></i> Manage Segments
-                        </a>
                         <a href="results.php" class="quick-action-btn btn-results">
                             <i class="fas fa-trophy"></i> View Results
-                        </a>
-                        <a href="settings.php" class="quick-action-btn" style="background: var(--royal-gradient);">
-                            <i class="fas fa-cog"></i> Pageant Settings
                         </a>
                     </div>
                 </div>
