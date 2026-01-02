@@ -16,6 +16,7 @@ $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pageant_name = trim($_POST['pageant_name']);
+    $gender_type = $_POST['gender_type'] ?? 'female';
     $primary_color = $_POST['primary_color'];
     $secondary_color = $_POST['secondary_color'];
     $accent_color = $_POST['accent_color'];
@@ -33,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!empty($pageant_name)) {
-        $stmt = $db->prepare("INSERT INTO pageants (name, primary_color, secondary_color, accent_color, logo_image) VALUES (?, ?, ?, ?, ?)");
-        if ($stmt->execute([$pageant_name, $primary_color, $secondary_color, $accent_color, $logo_image])) {
+        if (!empty($pageant_name)) {
+        $stmt = $db->prepare("INSERT INTO pageants (name, gender_type, primary_color, secondary_color, accent_color, logo_image) VALUES (?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$pageant_name, $gender_type, $primary_color, $secondary_color, $accent_color, $logo_image])) {
             $message = '<div class="alert alert-success">Pageant event created successfully!</div>';
             $pageant_name = '';
         } else {
@@ -92,6 +93,23 @@ $currentSettings = $settings->getAll();
                         <label for="pageant_name" class="form-label">Pageant Name</label>
                         <input type="text" class="form-control" id="pageant_name" name="pageant_name" value="<?php echo htmlspecialchars($pageant_name); ?>" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gender Type</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender_type" id="gender_female" value="female" checked>
+                                <label class="form-check-label" for="gender_female">Female</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender_type" id="gender_male" value="male">
+                                <label class="form-check-label" for="gender_male">Male</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender_type" id="gender_both" value="both">
+                                <label class="form-check-label" for="gender_both">Both</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label for="primary_color" class="form-label">Primary Color</label>
@@ -124,6 +142,7 @@ $currentSettings = $settings->getAll();
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th>Gender</th>
                             <th>Colors</th>
                             <th>Logo</th>
                             <th>Actions</th>
@@ -133,6 +152,7 @@ $currentSettings = $settings->getAll();
                         <?php foreach ($pageants as $pageant): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($pageant['name']); ?></td>
+                                <td><?php echo ucfirst(htmlspecialchars($pageant['gender_type'])); ?></td>
                                 <td>
                                     <span class="badge" style="background-color: <?php echo $pageant['primary_color']; ?>;">Primary</span>
                                     <span class="badge" style="background-color: <?php echo $pageant['secondary_color']; ?>;">Secondary</span>

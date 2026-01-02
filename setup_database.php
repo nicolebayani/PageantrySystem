@@ -61,6 +61,7 @@ try {
     CREATE TABLE IF NOT EXISTS pageants (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        gender_type ENUM('female', 'male', 'both') NOT NULL DEFAULT 'female',
         primary_color VARCHAR(7) DEFAULT '#667eea',
         secondary_color VARCHAR(7) DEFAULT '#764ba2',
         accent_color VARCHAR(7) DEFAULT '#ffd700',
