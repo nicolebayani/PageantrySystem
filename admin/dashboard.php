@@ -162,6 +162,7 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
         .btn-criteria { background: <?php echo $currentSettings['theme_style'] === 'gradient' ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : '#4facfe'; ?>; }
         .btn-judges { background: <?php echo $currentSettings['theme_style'] === 'gradient' ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' : '#43e97b'; ?>; }
         .btn-results { background: <?php echo $currentSettings['theme_style'] === 'gradient' ? 'var(--pageant-accent-gradient)' : 'var(--pageant-accent)'; ?>; }
+        .btn-rounds { background: <?php echo $currentSettings['theme_style'] === 'gradient' ? 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)' : '#ff9a9e'; ?>; }
         
         .alert-setup {
             background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
@@ -261,11 +262,14 @@ $totalPercentage = $percentageStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                         <a href="pageants.php" class="quick-action-btn btn-candidates">
                             <i class="fas fa-crown"></i> Manage Pageants
                         </a>
-                        <a href="criteria.php" class="quick-action-btn btn-criteria">
-                            <i class="fas fa-list-check"></i> Setup Criteria
+                        <a href="criteria_overview.php" class="quick-action-btn btn-criteria">
+                            <i class="fas fa-list-check"></i> View Criteria
                         </a>
                         <a href="judges.php" class="quick-action-btn btn-judges">
                             <i class="fas fa-gavel"></i> Manage Judges
+                        </a>
+                        <a href="rounds.php" class="quick-action-btn btn-rounds">
+                            <i class="fas fa-layer-group"></i> Manage Segments
                         </a>
                         <a href="results.php" class="quick-action-btn btn-results">
                             <i class="fas fa-trophy"></i> View Results
