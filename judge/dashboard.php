@@ -13,6 +13,20 @@ $db = $database->getConnection();
 
 $judge_id = $_SESSION['user_id'];
 
+// Get judge's assigned pageant
+$assignmentQuery = "SELECT pageant_id FROM judge_assignments WHERE judge_id = ?";
+$assignmentStmt = $db->prepare($assignmentQuery);
+$assignmentStmt->execute([$judge_id]);
+$assignment = $assignmentStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$assignment) {
+    // Handle case where judge is not assigned to any pageant
+    // You can display a message and exit or redirect
+    die("You are not assigned to any pageant. Please contact the administrator.");
+}
+
+$pageant_id = $assignment['pageant_id'];
+
 // Get judge's scoring progress
 $progressQuery = "
     SELECT 
@@ -20,19 +34,20 @@ $progressQuery = "
         c.name,
         c.age,
         COUNT(s.id) as scores_given,
-        (SELECT COUNT(*) FROM criteria) as total_criteria,
+        (SELECT COUNT(cr.id) FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ?) as total_criteria,
         CASE 
-            WHEN COUNT(s.id) = (SELECT COUNT(*) FROM criteria) THEN 'Complete'
+            WHEN COUNT(s.id) = (SELECT COUNT(cr.id) FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ?) THEN 'Complete'
             WHEN COUNT(s.id) > 0 THEN 'Partial'
             ELSE 'Not Started'
         END as status
     FROM candidates c
     LEFT JOIN scores s ON c.id = s.candidate_id AND s.judge_id = ?
+    WHERE c.pageant_id = ?
     GROUP BY c.id, c.name, c.age
     ORDER BY c.name
 ";
 $progressStmt = $db->prepare($progressQuery);
-$progressStmt->execute([$judge_id]);
+$progressStmt->execute([$pageant_id, $pageant_id, $judge_id, $pageant_id]);
 $candidates = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate overall progress
@@ -51,9 +66,9 @@ foreach ($candidates as $candidate) {
 $overallProgress = $totalCandidates > 0 ? round(($completedCandidates / $totalCandidates) * 100, 1) : 0;
 
 // Get criteria information
-$criteriaQuery = "SELECT * FROM criteria ORDER BY percentage DESC";
+$criteriaQuery = "SELECT cr.* FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ? ORDER BY cr.percentage DESC";
 $criteriaStmt = $db->prepare($criteriaQuery);
-$criteriaStmt->execute();
+$criteriaStmt->execute([$pageant_id]);
 $criteria = $criteriaStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get recent scores by this judge
@@ -66,12 +81,12 @@ $recentQuery = "
     FROM scores s
     JOIN candidates c ON s.candidate_id = c.id
     JOIN criteria cr ON s.criteria_id = cr.id
-    WHERE s.judge_id = ?
+    WHERE s.judge_id = ? AND c.pageant_id = ?
     ORDER BY s.created_at DESC
     LIMIT 10
 ";
 $recentStmt = $db->prepare($recentQuery);
-$recentStmt->execute([$judge_id]);
+$recentStmt->execute([$judge_id, $pageant_id]);
 $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

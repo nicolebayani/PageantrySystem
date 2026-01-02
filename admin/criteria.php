@@ -14,29 +14,35 @@ $db = $database->getConnection();
 $settings = new Settings($db);
 $currentSettings = $settings->getAll();
 
-// Determine current round
-$roundId = null;
-if (isset($_GET['round_id'])) {
-    $roundId = (int) $_GET['round_id'];
-} elseif (isset($_POST['round_id'])) {
-    $roundId = (int) $_POST['round_id'];
+// Determine current pageant
+$pageant_id = null;
+if (isset($_GET['pageant_id'])) {
+    $pageant_id = (int) $_GET['pageant_id'];
+} elseif (isset($_POST['pageant_id'])) {
+    $pageant_id = (int) $_POST['pageant_id'];
 }
 
-if (!$roundId) {
-    header('Location: rounds.php');
+if (!$pageant_id) {
+    header('Location: pageants.php');
     exit();
 }
 
-// Get round/segment details
-$roundQuery = "SELECT * FROM segments WHERE id = ?";
-$roundStmt = $db->prepare($roundQuery);
-$roundStmt->execute([$roundId]);
-$round = $roundStmt->fetch(PDO::FETCH_ASSOC);
+// Get pageant details
+$pageantQuery = "SELECT * FROM pageants WHERE id = ?";
+$pageantStmt = $db->prepare($pageantQuery);
+$pageantStmt->execute([$pageant_id]);
+$pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$round) {
-    header('Location: rounds.php');
+if (!$pageant) {
+    header('Location: pageants.php');
     exit();
 }
+
+// Get rounds for this pageant
+$roundsQuery = "SELECT * FROM segments WHERE pageant_id = ?";
+$roundsStmt = $db->prepare($roundsQuery);
+$roundsStmt->execute([$pageant_id]);
+$rounds = $roundsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $message = '';
 
@@ -48,20 +54,21 @@ if ($_POST) {
                 $name = $_POST['name'];
                 $percentage = $_POST['percentage'];
                 $description = $_POST['description'];
-                $roundId = (int) $_POST['round_id'];
-                
-                // Check if total percentage would exceed 100% for this round
-                $query = "SELECT SUM(percentage) as total FROM criteria WHERE round_id = ?";
+                $pageant_id_post = (int) $_POST['pageant_id'];
+                $round_id_post = !empty($_POST['round_id']) ? (int)$_POST['round_id'] : null;
+
+                // Check if total percentage would exceed 100% for this pageant
+                $query = "SELECT SUM(percentage) as total FROM criteria WHERE pageant_id = ?";
                 $stmt = $db->prepare($query);
-                $stmt->execute([$roundId]);
+                $stmt->execute([$pageant_id_post]);
                 $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                 
                 if ($total + $percentage > 100) {
-                    $message = '<div class="alert alert-danger">Total percentage for this round cannot exceed 100%. Current total: ' . $total . '%</div>';
+                    $message = '<div class="alert alert-danger">Total percentage for this pageant cannot exceed 100%. Current total: ' . $total . '%</div>';
                 } else {
-                    $query = "INSERT INTO criteria (round_id, name, percentage, description) VALUES (?, ?, ?, ?)";
+                    $query = "INSERT INTO criteria (pageant_id, round_id, name, percentage, description) VALUES (?, ?, ?, ?, ?)";
                     $stmt = $db->prepare($query);
-                    if ($stmt->execute([$roundId, $name, $percentage, $description])) {
+                    if ($stmt->execute([$pageant_id_post, $round_id_post, $name, $percentage, $description])) {
                         $message = '<div class="alert alert-success">Criteria added successfully!</div>';
                     } else {
                         $message = '<div class="alert alert-danger">Error adding criteria.</div>';
@@ -74,18 +81,21 @@ if ($_POST) {
                 $name = $_POST['name'];
                 $percentage = $_POST['percentage'];
                 $description = $_POST['description'];
-                $roundId = (int) $_POST['round_id'];
-                
-                // Check if total percentage would exceed 100% for this round (excluding current criteria)
-                $query = "SELECT SUM(percentage) as total FROM criteria WHERE id != ? AND round_id = ?";
+                $pageant_id_post = (int) $_POST['pageant_id'];
+                $round_id_post = !empty($_POST['round_id']) ? (int)$_POST['round_id'] : null;
+
+                // Check if total percentage would exceed 100% for this pageant (excluding current criteria)
+                $query = "SELECT SUM(percentage) as total FROM criteria WHERE id != ? AND pageant_id = ?";
                 $stmt = $db->prepare($query);
-                $stmt->execute([$id, $roundId]);
+                $stmt->execute([$id, $pageant_id_post]);
                 $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
                 
                 if ($total + $percentage > 100) {
-                    $message = '<div class="alert alert-danger">Total percentage for this round cannot exceed 100%. Current total (excluding this): ' . $total . '%</div>';
+                    $message = '<div class="alert alert-danger">Total percentage for this pageant cannot exceed 100%. Current total (excluding this): ' . $total . '%</div>';
                 } else {
-                    $query = "UPDATE criteria SET name = ?, percentage = ?, description = ? WHERE id = ?";
+                    $query = "UPDATE criteria SET round_id = ?, name = ?, percentage = ?, description = ? WHERE id = ?";
+                    $stmt->execute([$round_id_post, $name, $percentage, $description, $id]);
+                    $query = "UPDATE criteria SET name = ?, percentage = ?, description = ?, round_id = ? WHERE id = ?";
                     $stmt = $db->prepare($query);
                     if ($stmt->execute([$name, $percentage, $description, $id])) {
                         $message = '<div class="alert alert-success">Criteria updated successfully!</div>';
@@ -109,10 +119,10 @@ if ($_POST) {
     }
 }
 
-// Get all criteria for this round
-$query = "SELECT * FROM criteria WHERE round_id = ? ORDER BY percentage DESC";
+// Get all criteria for this pageant
+$query = "SELECT c.*, s.name as round_name FROM criteria c LEFT JOIN segments s ON c.round_id = s.id WHERE c.pageant_id = ? ORDER BY c.percentage DESC";
 $stmt = $db->prepare($query);
-$stmt->execute([$roundId]);
+$stmt->execute([$pageant_id]);
 $criteria = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate total percentage for this round
@@ -163,7 +173,7 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
     <div class="container mt-4 criteria-page-container">
         <h3 class="text-white mb-3">
             <i class="fas fa-layer-group"></i>
-            Criteria for Round: <?php echo htmlspecialchars($round['name']); ?>
+            Criteria for Pageant: <?php echo htmlspecialchars($pageant['name']); ?>
         </h3>
         <div class="row">
             <div class="col-md-4">
@@ -174,7 +184,16 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                     <div class="card-body">
                         <form method="POST" id="criteriaForm">
                             <input type="hidden" name="action" value="add">
-                            <input type="hidden" name="round_id" value="<?php echo $roundId; ?>">
+                                                        <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
+                            <div class="mb-3">
+                                <label for="round_id" class="form-label">Assign to Round (Optional)</label>
+                                <select class="form-select" id="round_id" name="round_id">
+                                    <option value="">-- General Criteria --</option>
+                                    <?php foreach ($rounds as $r): ?>
+                                        <option value="<?php echo $r['id']; ?>"><?php echo htmlspecialchars($r['name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                             <div class="mb-3">
                                 <label for="name" class="form-label">Criteria Name</label>
                                 <input type="text" class="form-control" id="name" name="name" required>
@@ -235,6 +254,7 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                                     <thead>
                                         <tr>
                                             <th>Name</th>
+                                            <th>Round</th>
                                             <th>Percentage</th>
                                             <th>Description</th>
                                             <th>Actions</th>
@@ -244,6 +264,9 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                                         <?php foreach ($criteria as $criterion): ?>
                                             <tr>
                                                 <td><?php echo htmlspecialchars($criterion['name']); ?></td>
+                                                <td>
+                                                    <span class="badge bg-secondary"><?php echo htmlspecialchars($criterion['round_name'] ?? 'General'); ?></span>
+                                                </td>
                                                 <td>
                                                     <span class="badge bg-primary"><?php echo $criterion['percentage']; ?>%</span>
                                                 </td>
@@ -284,7 +307,16 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                     <div class="modal-body">
                         <input type="hidden" name="action" value="update">
                         <input type="hidden" name="id" id="editId">
-                        <input type="hidden" name="round_id" id="editRoundId" value="<?php echo $roundId; ?>">
+                                                <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
+                        <div class="mb-3">
+                            <label for="editRoundId" class="form-label">Assign to Round (Optional)</label>
+                            <select class="form-select" id="editRoundId" name="round_id">
+                                <option value="">-- General Criteria --</option>
+                                <?php foreach ($rounds as $r): ?>
+                                    <option value="<?php echo $r['id']; ?>"><?php echo htmlspecialchars($r['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                         <div class="mb-3">
                             <label for="editName" class="form-label">Criteria Name</label>
                             <input type="text" class="form-control" id="editName" name="name" required>

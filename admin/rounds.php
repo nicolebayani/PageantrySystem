@@ -17,6 +17,20 @@ $currentSettings = $settings->getAll();
 
 $message = '';
 
+if (!isset($_GET['pageant_id'])) {
+    die('Pageant ID is required.');
+}
+$pageant_id = $_GET['pageant_id'];
+
+// Fetch pageant details
+$pageantStmt = $db->prepare("SELECT * FROM pageants WHERE id = ?");
+$pageantStmt->execute([$pageant_id]);
+$pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$pageant) {
+    die('Pageant not found.');
+}
+
 // Handle form submissions
 if ($_POST) {
     if (isset($_POST['action'])) {
@@ -24,10 +38,11 @@ if ($_POST) {
             case 'add':
                 $name = $_POST['name'];
                 $description = $_POST['description'];
+                $pageant_id_post = $_POST['pageant_id'];
 
-                $query = 'INSERT INTO segments (name, description) VALUES (?, ?)';
+                $query = 'INSERT INTO segments (name, description, pageant_id) VALUES (?, ?, ?)';
                 $stmt = $db->prepare($query);
-                if ($stmt->execute([$name, $description])) {
+                if ($stmt->execute([$name, $description, $pageant_id_post])) {
                     $message = '<div class="alert alert-success">Round added successfully!</div>';
                 } else {
                     $message = '<div class="alert alert-danger">Error adding round.</div>';
@@ -73,10 +88,10 @@ try {
         . "</div>");
 }
 
-// Get all segments
-$query = 'SELECT * FROM segments ORDER BY id ASC';
+// Get all segments for the current pageant
+$query = 'SELECT * FROM segments WHERE pageant_id = ? ORDER BY id ASC';
 $stmt = $db->prepare($query);
-$stmt->execute();
+$stmt->execute([$pageant_id]);
 $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -127,7 +142,8 @@ $rounds = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="card-body">
                         <form method="POST" id="roundForm">
-                            <input type="hidden" name="action" value="add">
+                                                        <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
                             <div class="mb-3">
                                 <label for="name" class="form-label">Segment Name</label>
                                 <input type="text" class="form-control" id="name" name="name" required>

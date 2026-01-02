@@ -164,6 +164,9 @@ $judges = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <td><?php echo htmlspecialchars($judge['username']); ?></td>
                                                 <td><?php echo date('M j, Y', strtotime($judge['created_at'])); ?></td>
                                                 <td>
+                                                    <a href="assign_judge.php?id=<?php echo $judge['id']; ?>" class="btn btn-info btn-sm">
+                                                        <i class="fas fa-user-tag"></i> Assign
+                                                    </a>
                                                     <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this judge?')">
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="id" value="<?php echo $judge['id']; ?>">

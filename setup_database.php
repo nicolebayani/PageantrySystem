@@ -38,6 +38,7 @@ try {
     $db->exec("DROP TABLE IF EXISTS criteria");
     $db->exec("DROP TABLE IF EXISTS segments");
     $db->exec("DROP TABLE IF EXISTS pageants");
+    $db->exec("DROP TABLE IF EXISTS judge_assignments");
     $db->exec("DROP TABLE IF EXISTS settings");
     $db->exec("DROP TABLE IF EXISTS users");
     echo "✅ Existing tables dropped for a clean setup<br>";
@@ -68,6 +69,20 @@ try {
     ) ENGINE=InnoDB";
     $db->exec($pageantsTable);
     echo "✅ Pageants table created<br>";
+
+    // Judge Assignments table
+    $judgeAssignmentsTable = "
+    CREATE TABLE IF NOT EXISTS judge_assignments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        judge_id INT NOT NULL,
+        pageant_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (judge_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_assignment (judge_id, pageant_id)
+    ) ENGINE=InnoDB";
+    $db->exec($judgeAssignmentsTable);
+    echo "✅ Judge Assignments table created<br>";
     
     // Candidates table
     $candidatesTable = "
@@ -90,10 +105,12 @@ try {
     $segmentsTable = "
     CREATE TABLE IF NOT EXISTS segments (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        pageant_id INT NOT NULL,
         name VARCHAR(100) NOT NULL,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE
     ) ENGINE=InnoDB";
     $db->exec($segmentsTable);
     echo "✅ Segments table created<br>";
@@ -102,11 +119,13 @@ try {
     $criteriaTable = "
     CREATE TABLE IF NOT EXISTS criteria (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        pageant_id INT NOT NULL,
         round_id INT,
         name VARCHAR(100) NOT NULL,
         percentage DECIMAL(5,2) NOT NULL,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
         FOREIGN KEY (round_id) REFERENCES segments(id) ON DELETE CASCADE
     ) ENGINE=InnoDB";
     $db->exec($criteriaTable);
@@ -159,6 +178,12 @@ try {
     // Step 4: Create user accounts
     echo "<h3>Step 4: Creating User Accounts</h3>";
     
+    // Step 4.5: Insert a default pageant
+    echo "<h3>Step 4.5: Inserting Default Pageant</h3>";
+    $db->exec("INSERT INTO pageants (name) VALUES ('Default Pageant')");
+    $defaultPageantId = $db->lastInsertId();
+    echo "✅ Default pageant created with ID: $defaultPageantId<br>";
+    
     // Check if admin exists
     $checkAdmin = $db->prepare("SELECT COUNT(*) FROM users WHERE username = 'admin'");
     $checkAdmin->execute();
@@ -206,14 +231,14 @@ try {
     
     if ($checkCriteria->fetchColumn() == 0) {
         $criteriaData = [
-            ['Beauty & Poise', 30.00, 'Physical appearance, posture, and overall presentation'],
-            ['Talent Performance', 25.00, 'Special talent or skill demonstration'],
-            ['Evening Gown', 20.00, 'Elegance and grace in formal wear'],
-            ['Interview Skills', 15.00, 'Communication skills and personality'],
-            ['Swimwear', 10.00, 'Physical fitness and confidence']
+            [$defaultPageantId, 'Beauty & Poise', 30.00, 'Physical appearance, posture, and overall presentation'],
+            [$defaultPageantId, 'Talent Performance', 25.00, 'Special talent or skill demonstration'],
+            [$defaultPageantId, 'Evening Gown', 20.00, 'Elegance and grace in formal wear'],
+            [$defaultPageantId, 'Interview Skills', 15.00, 'Communication skills and personality'],
+            [$defaultPageantId, 'Swimwear', 10.00, 'Physical fitness and confidence']
         ];
         
-        $insertCriteria = $db->prepare("INSERT INTO criteria (name, percentage, description) VALUES (?, ?, ?)");
+        $insertCriteria = $db->prepare("INSERT INTO criteria (pageant_id, name, percentage, description) VALUES (?, ?, ?, ?)");
         foreach ($criteriaData as $criteria) {
             $insertCriteria->execute($criteria);
         }

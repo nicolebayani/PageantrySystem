@@ -41,16 +41,28 @@ if ($_POST && isset($_POST['scores'])) {
     }
 }
 
-// Get all candidates
-$candidatesQuery = "SELECT * FROM candidates ORDER BY name";
+// Get judge's assigned pageant
+$assignmentQuery = "SELECT pageant_id FROM judge_assignments WHERE judge_id = ?";
+$assignmentStmt = $db->prepare($assignmentQuery);
+$assignmentStmt->execute([$_SESSION['user_id']]);
+$assignment = $assignmentStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$assignment) {
+    die("You are not assigned to any pageant. Please contact the administrator.");
+}
+
+$pageant_id = $assignment['pageant_id'];
+
+// Get all candidates for the assigned pageant
+$candidatesQuery = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY name";
 $candidatesStmt = $db->prepare($candidatesQuery);
-$candidatesStmt->execute();
+$candidatesStmt->execute([$pageant_id]);
 $candidates = $candidatesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get all criteria
-$criteriaQuery = "SELECT * FROM criteria ORDER BY percentage DESC";
+// Get all criteria for the assigned pageant
+$criteriaQuery = "SELECT cr.* FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ? ORDER BY cr.percentage DESC";
 $criteriaStmt = $db->prepare($criteriaQuery);
-$criteriaStmt->execute();
+$criteriaStmt->execute([$pageant_id]);
 $criteria = $criteriaStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get existing scores for this judge
