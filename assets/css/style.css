@@ -168,12 +168,12 @@ body::after {
 }
 
 .card .card-header {
-    color: #4a4a4a; /* Dark grey for better readability */
+    color: #fff;
     font-weight: 600;
 }
 
 .card .card-body {
-    color: #333;
+    color: #fff;
 }
 
 .card .table {

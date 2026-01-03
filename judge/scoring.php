@@ -41,17 +41,13 @@ if ($_POST && isset($_POST['scores'])) {
     }
 }
 
-// Get judge's assigned pageant
-$assignmentQuery = "SELECT pageant_id FROM judge_assignments WHERE judge_id = ?";
-$assignmentStmt = $db->prepare($assignmentQuery);
-$assignmentStmt->execute([$_SESSION['user_id']]);
-$assignment = $assignmentStmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$assignment) {
-    die("You are not assigned to any pageant. Please contact the administrator.");
+// Get judge's assigned pageant from session
+if (!isset($_SESSION['pageant_id'])) {
+    // Redirect to dashboard if pageant_id is not in session
+    header('Location: dashboard.php');
+    exit();
 }
-
-$pageant_id = $assignment['pageant_id'];
+$pageant_id = $_SESSION['pageant_id'];
 
 // Get all candidates for the assigned pageant
 $candidatesQuery = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY name";
@@ -86,7 +82,7 @@ while ($row = $scoresStmt->fetch(PDO::FETCH_ASSOC)) {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="../index.php">
                 <i class="fas fa-crown me-2"></i>Pageantry System
@@ -102,7 +98,7 @@ while ($row = $scoresStmt->fetch(PDO::FETCH_ASSOC)) {
         <?php echo $message; ?>
         
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <h4><i class="fas fa-star"></i> Score Candidates</h4>
                 <p class="mb-0">Rate each candidate from 1-10 for each criteria</p>
             </div>
