@@ -17,9 +17,7 @@ try {
     $conn = new PDO("mysql:host=$host", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Drop and Create database
-    $conn->exec("DROP DATABASE IF EXISTS $dbname");
-    $conn->exec("CREATE DATABASE IF NOT EXISTS $dbname");
+    $conn->exec("CREATE DATABASE IF NOT EXISTS $dbname CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     echo "✅ Database '$dbname' created/verified<br>";
     
     // Step 2: Connect to the specific database
@@ -29,19 +27,14 @@ try {
     $db->exec("set names utf8");
     echo "✅ Connected to database successfully<br>";
     
-    // Step 3: Create tables
+    // Step 3: Drop and Create Tables
     echo "<h3>Step 3: Creating Tables</h3>";
 
-    // Drop tables in reverse order of creation to avoid foreign key issues
-    $db->exec("DROP TABLE IF EXISTS scores");
-    $db->exec("DROP TABLE IF EXISTS candidates");
-    $db->exec("DROP TABLE IF EXISTS criteria");
-    $db->exec("DROP TABLE IF EXISTS segments");
-    $db->exec("DROP TABLE IF EXISTS pageants");
-    $db->exec("DROP TABLE IF EXISTS judge_assignments");
-    $db->exec("DROP TABLE IF EXISTS settings");
-    $db->exec("DROP TABLE IF EXISTS users");
-    echo "✅ Existing tables dropped for a clean setup<br>";
+    $db->exec('SET FOREIGN_KEY_CHECKS = 0;');
+    $db->exec('DROP TABLE IF EXISTS scores, criteria, segments, candidates, judge_assignments, pageants, users, settings;');
+    $db->exec('SET FOREIGN_key_CHECKS = 1;');
+    echo "✅ Existing tables dropped.<br>";
+
     
     // Users table
     $userTable = "
@@ -52,24 +45,34 @@ try {
         role ENUM('admin', 'judge') NOT NULL,
         full_name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($userTable);
     echo "✅ Users table created<br>";
 
     // Pageants table
+    $db->exec("DROP TABLE IF EXISTS pageants");
     $pageantsTable = "
     CREATE TABLE IF NOT EXISTS pageants (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        theme VARCHAR(255) NULL,
         gender_type ENUM('female', 'male', 'both') NOT NULL DEFAULT 'female',
         primary_color VARCHAR(7) DEFAULT '#667eea',
         secondary_color VARCHAR(7) DEFAULT '#764ba2',
         accent_color VARCHAR(7) DEFAULT '#ffd700',
         logo_image VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($pageantsTable);
     echo "✅ Pageants table created<br>";
+
+    // Ensure 'theme' column exists
+    $checkThemeColumn = $db->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pageants' AND COLUMN_NAME = 'theme'");
+    $checkThemeColumn->execute([$dbname]);
+    if ($checkThemeColumn->fetchColumn() == 0) {
+        $db->exec("ALTER TABLE pageants ADD COLUMN theme VARCHAR(255) NULL AFTER name");
+        echo "✅ 'theme' column added to 'pageants' table.<br>";
+    }
 
     // Judge Assignments table
     $judgeAssignmentsTable = "
@@ -81,7 +84,7 @@ try {
         FOREIGN KEY (judge_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
         UNIQUE KEY unique_assignment (judge_id, pageant_id)
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($judgeAssignmentsTable);
     echo "✅ Judge Assignments table created<br>";
     
@@ -98,7 +101,7 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
         UNIQUE KEY (pageant_id, candidate_number)
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($candidatesTable);
     echo "✅ Candidates table created<br>";
 
@@ -112,7 +115,7 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($segmentsTable);
     echo "✅ Segments table created<br>";
     
@@ -128,7 +131,7 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (pageant_id) REFERENCES pageants(id) ON DELETE CASCADE,
         FOREIGN KEY (round_id) REFERENCES segments(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($criteriaTable);
     echo "✅ Criteria table created<br>";
     
@@ -145,7 +148,7 @@ try {
         FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
         FOREIGN KEY (criteria_id) REFERENCES criteria(id) ON DELETE CASCADE,
         UNIQUE KEY unique_score (judge_id, candidate_id, criteria_id)
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($scoresTable);
     echo "✅ Scores table created<br>";
     
@@ -157,7 +160,7 @@ try {
         setting_value TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     $db->exec($settingsTable);
     echo "✅ Settings table created<br>";
 
@@ -175,15 +178,21 @@ try {
         echo "</ul>";
     }
 
+    // Step 3.6: Updating Table Character Sets
+    echo "<h3>Step 3.6: Updating Table Character Sets</h3>";
+    foreach ($tables as $table) {
+        try {
+            $db->exec("ALTER TABLE `" . $table . "` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            echo "✅ Table '" . htmlspecialchars($table) . "' converted to utf8mb4<br>";
+        } catch (PDOException $e) {
+            echo "❌ Could not convert table '" . htmlspecialchars($table) . "': " . $e->getMessage() . "<br>";
+        }
+    }
+
     
     // Step 4: Create user accounts
     echo "<h3>Step 4: Creating User Accounts</h3>";
     
-    // Step 4.5: Insert a default pageant
-    echo "<h3>Step 4.5: Inserting Default Pageant</h3>";
-    $db->exec("INSERT INTO pageants (name) VALUES ('Default Pageant')");
-    $defaultPageantId = $db->lastInsertId();
-    echo "✅ Default pageant created with ID: $defaultPageantId<br>";
     
     // Check if admin exists
     $checkAdmin = $db->prepare("SELECT COUNT(*) FROM users WHERE username = 'admin'");
@@ -224,53 +233,7 @@ try {
         echo "ℹ️ Pageantry Admin account already exists<br>";
     }
     
-    // Step 5: Insert default criteria
-    echo "<h3>Step 5: Setting Up Default Criteria</h3>";
     
-    $checkCriteria = $db->prepare("SELECT COUNT(*) FROM criteria");
-    $checkCriteria->execute();
-    
-    if ($checkCriteria->fetchColumn() == 0) {
-        $criteriaData = [
-            [$defaultPageantId, 'Beauty & Poise', 30.00, 'Physical appearance, posture, and overall presentation'],
-            [$defaultPageantId, 'Talent Performance', 25.00, 'Special talent or skill demonstration'],
-            [$defaultPageantId, 'Evening Gown', 20.00, 'Elegance and grace in formal wear'],
-            [$defaultPageantId, 'Interview Skills', 15.00, 'Communication skills and personality'],
-            [$defaultPageantId, 'Swimwear', 10.00, 'Physical fitness and confidence']
-        ];
-        
-        $insertCriteria = $db->prepare("INSERT INTO criteria (pageant_id, name, percentage, description) VALUES (?, ?, ?, ?)");
-        foreach ($criteriaData as $criteria) {
-            $insertCriteria->execute($criteria);
-        }
-        echo "✅ Default criteria added (5 categories totaling 100%)<br>";
-    } else {
-        echo "ℹ️ Criteria already exist<br>";
-    }
-    
-    // Step 6: Insert default settings
-    echo "<h3>Step 6: Setting Up Default Settings</h3>";
-    
-    $defaultSettings = [
-        'pageant_name' => 'Pageantry Competition',
-        'primary_color' => '#667eea',
-        'secondary_color' => '#764ba2',
-        'accent_color' => '#ffd700',
-        'logo_text' => '👑',
-        'logo_image' => '',
-        'logo_type' => 'emoji',
-        'theme_style' => 'gradient',
-        'background_style' => 'gradient',
-        'card_style' => 'glassmorphism'
-    ];
-    
-    $insertSetting = $db->prepare("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)");
-    $settingsAdded = 0;
-    foreach ($defaultSettings as $key => $value) {
-        $result = $insertSetting->execute([$key, $value]);
-        if ($result) $settingsAdded++;
-    }
-    echo "✅ Default settings configured ($settingsAdded new settings added)<br>";
     
     // Step 7: Test login functionality
     echo "<h3>Step 7: Testing Login System</h3>";

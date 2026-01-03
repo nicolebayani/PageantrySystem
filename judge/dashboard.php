@@ -27,6 +27,17 @@ if (!$assignment) {
 
 $pageant_id = $assignment['pageant_id'];
 
+// Get Pageant Details
+$pageantQuery = "SELECT name, theme FROM pageants WHERE id = ?";
+$pageantStmt = $db->prepare($pageantQuery);
+$pageantStmt->execute([$pageant_id]);
+$pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$pageant) {
+    // Handle case where pageant details are not found
+    die("Could not retrieve pageant details. Please contact the administrator.");
+}
+
 // Get judge's scoring progress
 $progressQuery = "
     SELECT 
@@ -95,7 +106,7 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Judge Dashboard - Pageantry System</title>
+    <title>Judge Dashboard - <?php echo htmlspecialchars($pageant['name']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
@@ -202,7 +213,7 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="../index.php">
-                <i class="fas fa-crown me-2"></i>Pageantry System
+                <i class="fas fa-crown me-2"></i><?php echo htmlspecialchars($pageant['name']); ?>
             </a>
             <div class="navbar-nav ms-auto">
                 <span class="nav-link">Judge: <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
@@ -218,9 +229,9 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="judge-dashboard-card p-4 text-center">
                     <h1 class="display-5 fw-bold mb-3">
                         <i class="fas fa-gavel text-success"></i>
-                        Judge Dashboard
+                        <?php echo htmlspecialchars($pageant['name']); ?>
                     </h1>
-                    <p class="lead">Your scoring progress and candidate overview</p>
+                    <p class="lead"><?php echo htmlspecialchars($pageant['theme'] ?? 'Your scoring progress and candidate overview'); ?></p>
                 </div>
             </div>
         </div>

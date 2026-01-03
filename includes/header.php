@@ -41,7 +41,7 @@ $pageantSettings = getPageantSettings();
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="<?php echo isset($homeUrl) ? $homeUrl : '../index.php'; ?>">
                 <?php if (!empty($pageantSettings['logo_image']) && file_exists(__DIR__ . '/../uploads/logos/' . $pageantSettings['logo_image'])): ?>
