@@ -145,7 +145,7 @@ include_once __DIR__ . '/../includes/header.php';
                                     </div>
                                     <div class="pageant-card-footer">
                                         <a href="edit_pageant.php?id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-outline-light">Edit</a>
-                                        <a href="dashboard.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-primary">Manage</a>
+                                        <a href="manage_pageant.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-primary">Manage</a>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
