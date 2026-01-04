@@ -50,10 +50,18 @@ if (!isset($_SESSION['pageant_id'])) {
 $pageant_id = $_SESSION['pageant_id'];
 
 // Get all candidates for the assigned pageant
-$candidatesQuery = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY name";
+$candidatesQuery = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY gender, name";
 $candidatesStmt = $db->prepare($candidatesQuery);
 $candidatesStmt->execute([$pageant_id]);
 $candidates = $candidatesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Group candidates by gender
+$maleCandidates = array_filter($candidates, function($candidate) {
+    return $candidate['gender'] === 'Male';
+});
+$femaleCandidates = array_filter($candidates, function($candidate) {
+    return $candidate['gender'] === 'Female';
+});
 
 // Get all criteria for the assigned pageant
 $criteriaQuery = "SELECT cr.* FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?)) ORDER BY cr.percentage DESC";
@@ -111,42 +119,104 @@ while ($row = $scoresStmt->fetch(PDO::FETCH_ASSOC)) {
                     </div>
                 <?php else: ?>
                     <form method="POST" id="scoringForm">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Candidate</th>
-                                        <?php foreach ($criteria as $criterion): ?>
-                                            <th class="text-center">
-                                                <?php echo htmlspecialchars($criterion['name']); ?>
-                                                <br><small class="text-muted"><?php echo $criterion['percentage']; ?>%</small>
-                                            </th>
-                                        <?php endforeach; ?>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($candidates as $candidate): ?>
-                                        <tr>
-                                            <td class="fw-bold">
-                                                <?php echo htmlspecialchars($candidate['name']); ?>
-                                                <?php if ($candidate['age']): ?>
-                                                    <br><small class="text-muted">Age: <?php echo $candidate['age']; ?></small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <?php foreach ($criteria as $criterion): ?>
-                                                <td class="text-center">
-                                                    <input type="number" 
-                                                           class="form-control text-center score-input" 
-                                                           name="scores[<?php echo $candidate['id']; ?>][<?php echo $criterion['id']; ?>]"
-                                                           min="1" max="10" step="0.1"
-                                                           value="<?php echo isset($existingScores[$candidate['id']][$criterion['id']]) ? $existingScores[$candidate['id']][$criterion['id']] : ''; ?>"
-                                                           placeholder="1-10">
-                                                </td>
+                        <!-- Male Candidates Section -->
+                        <div class="mb-5">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-male"></i> Male Candidates
+                            </h4>
+                            <?php if (empty($maleCandidates)): ?>
+                                <div class="text-center text-muted mb-4">
+                                    <p>No male candidates available for scoring.</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive mb-4">
+                                    <table class="table table-bordered">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Candidate</th>
+                                                <?php foreach ($criteria as $criterion): ?>
+                                                    <th class="text-center">
+                                                        <?php echo htmlspecialchars($criterion['name']); ?>
+                                                        <br><small class="text-muted"><?php echo $criterion['percentage']; ?>%</small>
+                                                    </th>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($maleCandidates as $candidate): ?>
+                                                <tr>
+                                                    <td class="fw-bold">
+                                                        <?php echo htmlspecialchars($candidate['name']); ?>
+                                                        <?php if ($candidate['age']): ?>
+                                                            <br><small class="text-muted">Age: <?php echo $candidate['age']; ?></small>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <?php foreach ($criteria as $criterion): ?>
+                                                        <td class="text-center">
+                                                            <input type="number" 
+                                                                   class="form-control text-center score-input" 
+                                                                   name="scores[<?php echo $candidate['id']; ?>][<?php echo $criterion['id']; ?>]"
+                                                                   min="1" max="10" step="0.1"
+                                                                   value="<?php echo isset($existingScores[$candidate['id']][$criterion['id']]) ? $existingScores[$candidate['id']][$criterion['id']] : ''; ?>"
+                                                                   placeholder="1-10">
+                                                        </td>
+                                                    <?php endforeach; ?>
+                                                </tr>
                                             <?php endforeach; ?>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Female Candidates Section -->
+                        <div class="mb-4">
+                            <h4 class="text-danger mb-3">
+                                <i class="fas fa-female"></i> Female Candidates
+                            </h4>
+                            <?php if (empty($femaleCandidates)): ?>
+                                <div class="text-center text-muted mb-4">
+                                    <p>No female candidates available for scoring.</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive mb-4">
+                                    <table class="table table-bordered">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Candidate</th>
+                                                <?php foreach ($criteria as $criterion): ?>
+                                                    <th class="text-center">
+                                                        <?php echo htmlspecialchars($criterion['name']); ?>
+                                                        <br><small class="text-muted"><?php echo $criterion['percentage']; ?>%</small>
+                                                    </th>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($femaleCandidates as $candidate): ?>
+                                                <tr>
+                                                    <td class="fw-bold">
+                                                        <?php echo htmlspecialchars($candidate['name']); ?>
+                                                        <?php if ($candidate['age']): ?>
+                                                            <br><small class="text-muted">Age: <?php echo $candidate['age']; ?></small>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <?php foreach ($criteria as $criterion): ?>
+                                                        <td class="text-center">
+                                                            <input type="number" 
+                                                                   class="form-control text-center score-input" 
+                                                                   name="scores[<?php echo $candidate['id']; ?>][<?php echo $criterion['id']; ?>]"
+                                                                   min="1" max="10" step="0.1"
+                                                                   value="<?php echo isset($existingScores[$candidate['id']][$criterion['id']]) ? $existingScores[$candidate['id']][$criterion['id']] : ''; ?>"
+                                                                   placeholder="1-10">
+                                                        </td>
+                                                    <?php endforeach; ?>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="text-center mt-4">

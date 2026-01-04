@@ -45,6 +45,7 @@ $progressQuery = "
         c.id,
         c.name,
         c.age,
+        c.gender,
         COUNT(s.id) as scores_given,
         (SELECT COUNT(cr.id) FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?))) as total_criteria,
         CASE 
@@ -55,12 +56,20 @@ $progressQuery = "
     FROM candidates c
     LEFT JOIN scores s ON c.id = s.candidate_id AND s.judge_id = ?
     WHERE c.pageant_id = ?
-    GROUP BY c.id, c.name, c.age
-    ORDER BY c.name
+    GROUP BY c.id, c.name, c.age, c.gender
+    ORDER BY c.gender, c.name
 ";
 $progressStmt = $db->prepare($progressQuery);
 $progressStmt->execute([$pageant_id, $pageant_id, $pageant_id, $pageant_id, $judge_id, $pageant_id]);
 $candidates = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Group candidates by gender
+$maleCandidates = array_filter($candidates, function($candidate) {
+    return $candidate['gender'] === 'Male';
+});
+$femaleCandidates = array_filter($candidates, function($candidate) {
+    return $candidate['gender'] === 'Female';
+});
 
 // Calculate overall progress
 $totalCandidates = count($candidates);
@@ -277,15 +286,18 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <div class="row">
-            <!-- Candidate Progress -->
+            <!-- Male Candidates Progress -->
             <div class="col-md-6 mb-4">
                 <div class="judge-dashboard-card p-4">
-                    <h5 class="mb-3"><i class="fas fa-users text-primary"></i> Candidate Progress</h5>
-                    <?php if (empty($candidates)): ?>
-                        <p class="text-muted text-center">No candidates available for scoring.</p>
+                    <h5 class="mb-3 text-primary">
+                        <i class="fas fa-male"></i> Male Candidates 
+                        <span class="badge bg-primary ms-2"><?php echo count($maleCandidates); ?></span>
+                    </h5>
+                    <?php if (empty($maleCandidates)): ?>
+                        <p class="text-muted text-center">No male candidates available for scoring.</p>
                     <?php else: ?>
                         <div style="max-height: 400px; overflow-y: auto;">
-                            <?php foreach ($candidates as $candidate): ?>
+                            <?php foreach ($maleCandidates as $candidate): ?>
                                 <div class="candidate-card card status-<?php echo strtolower(str_replace(' ', '-', $candidate['status'])); ?>">
                                     <div class="card-body py-3">
                                         <div class="d-flex justify-content-between align-items-center">
@@ -314,6 +326,48 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endif; ?>
                 </div>
             </div>
+
+            <!-- Female Candidates Progress -->
+            <div class="col-md-6 mb-4">
+                <div class="judge-dashboard-card p-4">
+                    <h5 class="mb-3 text-danger">
+                        <i class="fas fa-female"></i> Female Candidates 
+                        <span class="badge bg-danger ms-2"><?php echo count($femaleCandidates); ?></span>
+                    </h5>
+                    <?php if (empty($femaleCandidates)): ?>
+                        <p class="text-muted text-center">No female candidates available for scoring.</p>
+                    <?php else: ?>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <?php foreach ($femaleCandidates as $candidate): ?>
+                                <div class="candidate-card card status-<?php echo strtolower(str_replace(' ', '-', $candidate['status'])); ?>">
+                                    <div class="card-body py-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><?php echo htmlspecialchars($candidate['name']); ?></h6>
+                                                <?php if ($candidate['age']): ?>
+                                                    <small class="text-muted">Age: <?php echo $candidate['age']; ?></small>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="score-badge badge bg-<?php 
+                                                    echo $candidate['status'] === 'Complete' ? 'success' : 
+                                                        ($candidate['status'] === 'Partial' ? 'warning' : 'danger'); 
+                                                ?>">
+                                                    <?php echo $candidate['status']; ?>
+                                                </span>
+                                                <div class="small text-muted mt-1">
+                                                    <?php echo $candidate['scores_given']; ?>/<?php echo $candidate['total_criteria']; ?> criteria
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
             <!-- Scoring Criteria & Recent Activity -->
             <div class="col-md-6">

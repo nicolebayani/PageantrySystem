@@ -41,6 +41,7 @@ if ($_POST) {
                 $candidate_number = $_POST['candidate_number'];
                 $name = $_POST['name'];
                 $age = $_POST['age'];
+                $gender = $_POST['gender'];
                 $description = $_POST['description'];
                 
                 // Handle file upload
@@ -70,9 +71,9 @@ if ($_POST) {
                 }
                 
                 $pageant_id_post = $_POST['pageant_id'];
-                $query = "INSERT INTO candidates (pageant_id, candidate_number, name, age, description, photo) VALUES (?, ?, ?, ?, ?, ?)";
+                $query = "INSERT INTO candidates (pageant_id, candidate_number, name, age, gender, description, photo) VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $db->prepare($query);
-                if ($stmt->execute([$pageant_id_post, $candidate_number, $name, $age, $description, $photo])) {
+                if ($stmt->execute([$pageant_id_post, $candidate_number, $name, $age, $gender, $description, $photo])) {
                     if (!$message) {
                         $message = '<div class="alert alert-success">Candidate added successfully!</div>';
                     }
@@ -96,10 +97,22 @@ if ($_POST) {
 }
 
 // Get all candidates for the specific pageant
-$query = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY candidate_number";
+$query = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY gender, candidate_number";
 $stmt = $db->prepare($query);
 $stmt->execute([$pageant_id]);
 $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get next available candidate numbers for each gender
+$getNextNumber = function($gender) use ($db, $pageant_id) {
+    $query = "SELECT MAX(CAST(candidate_number AS UNSIGNED)) as max_num FROM candidates WHERE pageant_id = ? AND gender = ?";
+    $stmt = $db->prepare($query);
+    $stmt->execute([$pageant_id, $gender]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return ($result['max_num'] ?? 0) + 1;
+};
+
+$nextMaleNumber = $getNextNumber('Male');
+$nextFemaleNumber = $getNextNumber('Female');
 ?>
 
 <!DOCTYPE html>
@@ -150,8 +163,20 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <input type="hidden" name="action" value="add">
                             <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
                             <div class="mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender" required onchange="updateCandidateNumber()">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
                                 <label for="candidate_number" class="form-label">Candidate Number</label>
-                                <input type="text" class="form-control" id="candidate_number" name="candidate_number" required placeholder="e.g., 001, 002, etc.">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="candidate_number" name="candidate_number" required readonly>
+                                    <span class="input-group-text" id="numberHint">Select gender first</span>
+                                </div>
+                                <div class="form-text">Number is automatically assigned based on gender. You can override if needed.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="name" class="form-label">Full Name</label>
@@ -194,47 +219,114 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <p class="text-muted">Add your first candidate using the form on the left</p>
                             </div>
                         <?php else: ?>
-                            <div class="row g-4">
-                                <?php foreach ($candidates as $candidate): ?>
-                                    <div class="col-12 col-md-6 col-lg-4">
-                                        <div class="candidate-card card h-100 border-0 shadow-sm hover-shadow transition-all">
-                                            <div class="position-relative">
-                                                <?php if ($candidate['photo']): ?>
-                                                    <img src="../uploads/candidates/<?php echo htmlspecialchars($candidate['photo']); ?>" 
-                                                         class="card-img-top" alt="<?php echo htmlspecialchars($candidate['name']); ?>"
-                                                         style="height: 200px; object-fit: cover; border-radius: 0.5rem 0.5rem 0 0;">
-                                                <?php else: ?>
-                                                    <div class="bg-light d-flex align-items-center justify-content-center" 
-                                                         style="height: 200px; border-radius: 0.5rem 0.5rem 0 0; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);">
-                                                        <i class="fas fa-user text-muted fa-5x opacity-25"></i>
+                            <!-- Male Candidates Section -->
+                            <div class="mb-4">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-male"></i> Male Candidates 
+                                    <span class="badge bg-primary ms-2"><?php echo count(array_filter($candidates, function($c) { return $c['gender'] === 'Male'; })); ?></span>
+                                </h5>
+                                <div class="row g-4">
+                                    <?php foreach ($candidates as $candidate): ?>
+                                        <?php if ($candidate['gender'] === 'Male'): ?>
+                                            <div class="col-12 col-md-6 col-lg-4">
+                                                <div class="candidate-card card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                                    <div class="position-relative">
+                                                        <?php if ($candidate['photo']): ?>
+                                                            <img src="../uploads/candidates/<?php echo htmlspecialchars($candidate['photo']); ?>" 
+                                                                 class="card-img-top" alt="<?php echo htmlspecialchars($candidate['name']); ?>"
+                                                                 style="height: 200px; object-fit: cover; border-radius: 0.5rem 0.5rem 0 0;">
+                                                        <?php else: ?>
+                                                            <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                                 style="height: 200px; border-radius: 0.5rem 0.5rem 0 0; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);">
+                                                                <i class="fas fa-user text-muted fa-5x opacity-25"></i>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        <div class="candidate-number">
+                                                            <span class="badge rounded-pill bg-primary">#<?php echo htmlspecialchars($candidate['candidate_number']); ?></span>
+                                                        </div>
                                                     </div>
-                                                <?php endif; ?>
-                                                <div class="candidate-number">
-                                                    <span class="badge rounded-pill bg-primary">#<?php echo htmlspecialchars($candidate['candidate_number']); ?></span>
+                                                    <div class="card-body position-relative">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <h5 class="card-title mb-0"><?php echo htmlspecialchars($candidate['name']); ?></h5>
+                                                            <div>
+                                                                <span class="badge bg-primary me-1">Male</span>
+                                                                <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="card-text text-muted small mb-3">
+                                                            <?php 
+                                                            $desc = trim($candidate['description']);
+                                                            echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
+                                                            ?>
+                                                        </p>
+                                                        <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
+                                                            <input type="hidden" name="action" value="delete">
+                                                            <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Candidate">
+                                                                <i class="fas fa-trash-alt me-1"></i> Remove
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="card-body position-relative">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <h5 class="card-title mb-0"><?php echo htmlspecialchars($candidate['name']); ?></h5>
-                                                    <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <!-- Female Candidates Section -->
+                            <div class="mb-4">
+                                <h5 class="text-danger mb-3">
+                                    <i class="fas fa-female"></i> Female Candidates 
+                                    <span class="badge bg-danger ms-2"><?php echo count(array_filter($candidates, function($c) { return $c['gender'] === 'Female'; })); ?></span>
+                                </h5>
+                                <div class="row g-4">
+                                    <?php foreach ($candidates as $candidate): ?>
+                                        <?php if ($candidate['gender'] === 'Female'): ?>
+                                            <div class="col-12 col-md-6 col-lg-4">
+                                                <div class="candidate-card card h-100 border-0 shadow-sm hover-shadow transition-all">
+                                                    <div class="position-relative">
+                                                        <?php if ($candidate['photo']): ?>
+                                                            <img src="../uploads/candidates/<?php echo htmlspecialchars($candidate['photo']); ?>" 
+                                                                 class="card-img-top" alt="<?php echo htmlspecialchars($candidate['name']); ?>"
+                                                                 style="height: 200px; object-fit: cover; border-radius: 0.5rem 0.5rem 0 0;">
+                                                        <?php else: ?>
+                                                            <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                                 style="height: 200px; border-radius: 0.5rem 0.5rem 0 0; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);">
+                                                                <i class="fas fa-user text-muted fa-5x opacity-25"></i>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        <div class="candidate-number">
+                                                            <span class="badge rounded-pill bg-danger">#<?php echo htmlspecialchars($candidate['candidate_number']); ?></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body position-relative">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <h5 class="card-title mb-0"><?php echo htmlspecialchars($candidate['name']); ?></h5>
+                                                            <div>
+                                                                <span class="badge bg-danger me-1">Female</span>
+                                                                <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="card-text text-muted small mb-3">
+                                                            <?php 
+                                                            $desc = trim($candidate['description']);
+                                                            echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
+                                                            ?>
+                                                        </p>
+                                                        <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
+                                                            <input type="hidden" name="action" value="delete">
+                                                            <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Candidate">
+                                                                <i class="fas fa-trash-alt me-1"></i> Remove
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </div>
-                                                <p class="card-text text-muted small mb-3">
-                                                    <?php 
-                                                    $desc = trim($candidate['description']);
-                                                    echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
-                                                    ?>
-                                                </p>
-                                                <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
-                                                    <input type="hidden" name="action" value="delete">
-                                                    <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Candidate">
-                                                        <i class="fas fa-trash-alt me-1"></i> Remove
-                                                    </button>
-                                                </form>
                                             </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -312,5 +404,29 @@ $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateCandidateNumber() {
+            const gender = document.getElementById('gender').value;
+            const candidateNumber = document.getElementById('candidate_number');
+            const numberHint = document.getElementById('numberHint');
+            
+            if (gender === 'Male') {
+                candidateNumber.value = '<?php echo $nextMaleNumber; ?>';
+                numberHint.textContent = 'Next male number';
+            } else if (gender === 'Female') {
+                candidateNumber.value = '<?php echo $nextFemaleNumber; ?>';
+                numberHint.textContent = 'Next female number';
+            } else {
+                candidateNumber.value = '';
+                numberHint.textContent = 'Select gender first';
+            }
+        }
+        
+        // Allow manual override of candidate number
+        document.getElementById('candidate_number').addEventListener('dblclick', function() {
+            this.readOnly = false;
+            this.placeholder = 'Enter custom number';
+        });
+    </script>
 </body>
 </html>
