@@ -56,9 +56,9 @@ $candidatesStmt->execute([$pageant_id]);
 $candidates = $candidatesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all criteria for the assigned pageant
-$criteriaQuery = "SELECT cr.* FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ? ORDER BY cr.percentage DESC";
+$criteriaQuery = "SELECT cr.* FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?)) ORDER BY cr.percentage DESC";
 $criteriaStmt = $db->prepare($criteriaQuery);
-$criteriaStmt->execute([$pageant_id]);
+$criteriaStmt->execute([$pageant_id, $pageant_id]);
 $criteria = $criteriaStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get existing scores for this judge

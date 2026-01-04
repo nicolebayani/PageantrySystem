@@ -46,9 +46,9 @@ $progressQuery = "
         c.name,
         c.age,
         COUNT(s.id) as scores_given,
-        (SELECT COUNT(cr.id) FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ?) as total_criteria,
+        (SELECT COUNT(cr.id) FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?))) as total_criteria,
         CASE 
-            WHEN COUNT(s.id) = (SELECT COUNT(cr.id) FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ?) THEN 'Complete'
+            WHEN COUNT(s.id) = (SELECT COUNT(cr.id) FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?))) THEN 'Complete'
             WHEN COUNT(s.id) > 0 THEN 'Partial'
             ELSE 'Not Started'
         END as status
@@ -59,7 +59,7 @@ $progressQuery = "
     ORDER BY c.name
 ";
 $progressStmt = $db->prepare($progressQuery);
-$progressStmt->execute([$pageant_id, $pageant_id, $judge_id, $pageant_id]);
+$progressStmt->execute([$pageant_id, $pageant_id, $pageant_id, $pageant_id, $judge_id, $pageant_id]);
 $candidates = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate overall progress
@@ -78,9 +78,9 @@ foreach ($candidates as $candidate) {
 $overallProgress = $totalCandidates > 0 ? round(($completedCandidates / $totalCandidates) * 100, 1) : 0;
 
 // Get criteria information
-$criteriaQuery = "SELECT cr.* FROM criteria cr JOIN segments seg ON cr.round_id = seg.id WHERE seg.pageant_id = ? ORDER BY cr.percentage DESC";
+$criteriaQuery = "SELECT cr.* FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?)) ORDER BY cr.percentage DESC";
 $criteriaStmt = $db->prepare($criteriaQuery);
-$criteriaStmt->execute([$pageant_id]);
+$criteriaStmt->execute([$pageant_id, $pageant_id]);
 $criteria = $criteriaStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get recent scores by this judge
