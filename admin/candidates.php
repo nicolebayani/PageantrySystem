@@ -23,7 +23,7 @@ if (!isset($_GET['pageant_id'])) {
 $pageant_id = $_GET['pageant_id'];
 
 // Get pageant details
-$pageantQuery = "SELECT name FROM pageants WHERE id = ?";
+$pageantQuery = "SELECT name, gender_type FROM pageants WHERE id = ?";
 $pageantStmt = $db->prepare($pageantQuery);
 $pageantStmt->execute([$pageant_id]);
 $pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
@@ -97,7 +97,7 @@ if ($_POST) {
 }
 
 // Get all candidates for the specific pageant
-$query = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY gender, candidate_number";
+$query = "SELECT * FROM candidates WHERE pageant_id = ? ORDER BY CAST(candidate_number AS UNSIGNED)";
 $stmt = $db->prepare($query);
 $stmt->execute([$pageant_id]);
 $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -162,6 +162,7 @@ $nextFemaleNumber = $getNextNumber('Female');
                         <form method="POST" enctype="multipart/form-data">
                                                         <input type="hidden" name="action" value="add">
                             <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
+                            <?php if ($pageant['gender_type'] === 'Both'): ?>
                             <div class="mb-3">
                                 <label for="gender" class="form-label">Gender</label>
                                 <select class="form-select" id="gender" name="gender" required onchange="updateCandidateNumber()">
@@ -170,6 +171,9 @@ $nextFemaleNumber = $getNextNumber('Female');
                                     <option value="Female">Female</option>
                                 </select>
                             </div>
+                            <?php else: ?>
+                                <input type="hidden" id="gender" name="gender" value="<?php echo ucfirst($pageant['gender_type']); ?>">
+                            <?php endif; ?>
                             <div class="mb-3">
                                 <label for="candidate_number" class="form-label">Candidate Number</label>
                                 <div class="input-group">
@@ -219,6 +223,7 @@ $nextFemaleNumber = $getNextNumber('Female');
                                 <p class="text-muted">Add your first candidate using the form on the left</p>
                             </div>
                         <?php else: ?>
+                            <?php if ($pageant['gender_type'] === 'Male' || $pageant['gender_type'] === 'Both'): ?>
                             <!-- Male Candidates Section -->
                             <div class="mb-4">
                                 <h5 class="text-primary mb-3">
@@ -273,7 +278,9 @@ $nextFemaleNumber = $getNextNumber('Female');
                                     <?php endforeach; ?>
                                 </div>
                             </div>
+                            <?php endif; ?>
 
+                            <?php if ($pageant['gender_type'] === 'Female' || $pageant['gender_type'] === 'Both'): ?>
                             <!-- Female Candidates Section -->
                             <div class="mb-4">
                                 <h5 class="text-danger mb-3">
@@ -328,6 +335,7 @@ $nextFemaleNumber = $getNextNumber('Female');
                                     <?php endforeach; ?>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -405,8 +413,10 @@ $nextFemaleNumber = $getNextNumber('Female');
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+                
         function updateCandidateNumber() {
-            const gender = document.getElementById('gender').value;
+            const genderInput = document.getElementById('gender');
+            const gender = genderInput.value;
             const candidateNumber = document.getElementById('candidate_number');
             const numberHint = document.getElementById('numberHint');
             
@@ -421,7 +431,14 @@ $nextFemaleNumber = $getNextNumber('Female');
                 numberHint.textContent = 'Select gender first';
             }
         }
-        
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // If gender is a hidden input, it's a single-gender pageant, so set the number on load.
+            if (document.getElementById('gender').type === 'hidden') {
+                updateCandidateNumber();
+            }
+        });
+
         // Allow manual override of candidate number
         document.getElementById('candidate_number').addEventListener('dblclick', function() {
             this.readOnly = false;

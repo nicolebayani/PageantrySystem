@@ -15,6 +15,48 @@ $pageant_name = '';
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'delete') {
+        $pageant_id_to_delete = $_POST['pageant_id'];
+        try {
+            $db->beginTransaction();
+
+            // Correct order for deletion to respect foreign key constraints
+            $tables_to_delete_from = ['scores', 'criteria', 'candidates', 'segments', 'judge_assignments'];
+
+            // Special handling for scores table
+            try {
+                $stmt = $db->prepare("DELETE FROM scores WHERE candidate_id IN (SELECT id FROM candidates WHERE pageant_id = ?)");
+                $stmt->execute([$pageant_id_to_delete]);
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'base table or view not found') === false) {
+                    throw $e;
+                }
+            }
+
+            // Delete from other tables
+            $other_tables = ['criteria', 'candidates', 'segments', 'judge_assignments'];
+            foreach ($other_tables as $table) {
+                try {
+                    $stmt = $db->prepare("DELETE FROM {$table} WHERE pageant_id = ?");
+                    $stmt->execute([$pageant_id_to_delete]);
+                } catch (PDOException $e) {
+                    if (strpos($e->getMessage(), 'base table or view not found') === false) {
+                        throw $e; // Re-throw other errors
+                    }
+                }
+            }
+
+            // Finally, delete the pageant itself
+            $stmt = $db->prepare("DELETE FROM pageants WHERE id = ?");
+            $stmt->execute([$pageant_id_to_delete]);
+
+            $db->commit();
+            $message = '<div class="alert alert-success">Pageant and all related data deleted successfully!</div>';
+        } catch (Exception $e) {
+            $db->rollBack();
+            $message = '<div class="alert alert-danger">Failed to delete pageant: ' . $e->getMessage() . '</div>';
+        }
+    } else {
     $pageant_name = trim($_POST['pageant_name']);
     $gender_type = $_POST['gender_type'] ?? 'female';
     $primary_color = $_POST['primary_color'];
@@ -44,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         $message = '<div class="alert alert-danger">Pageant name is required.</div>';
+    }
     }
 }
 
@@ -146,6 +189,11 @@ include_once __DIR__ . '/../includes/header.php';
                                     <div class="pageant-card-footer">
                                         <a href="edit_pageant.php?id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-outline-light">Edit</a>
                                         <a href="manage_pageant.php?pageant_id=<?php echo $pageant['id']; ?>" class="btn btn-sm btn-primary">Manage</a>
+                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this pageant? This action cannot be undone.');" style="display: inline;">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="pageant_id" value="<?php echo $pageant['id']; ?>">
+                                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                        </form>
                                     </div>
                                 </div>
                             <?php endforeach; ?>

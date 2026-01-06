@@ -330,9 +330,6 @@ $colorThemes = [
                             <button type="button" class="btn btn-outline-secondary btn-lg px-5 ms-3" onclick="previewChanges()">
                                 <i class="fas fa-eye"></i> Preview
                             </button>
-                            <a href="../test_settings_propagation.php" class="btn btn-outline-info btn-lg px-5 ms-3" target="_blank">
-                                <i class="fas fa-vial"></i> Test Propagation
-                            </a>
                         </div>
                     </form>
                 </div>
