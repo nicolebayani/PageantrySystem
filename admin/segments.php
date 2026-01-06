@@ -103,9 +103,12 @@ $segments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Manage Segments - Pageantry System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=1.1">
     <style>
         <?php echo $settings->generateCSS(); ?>
+        .card .card-body form .form-label {
+            color: #212529 !important;
+        }
     </style>
 </head>
 <body>
@@ -190,7 +193,7 @@ $segments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <td><?php echo htmlspecialchars($segment['name']); ?></td>
                                                 <td><?php echo htmlspecialchars(substr($segment['description'], 0, 50)) . '...'; ?></td>
                                                 <td>
-                                                    <a href="criteria.php?segment_id=<?php echo $segment['id']; ?>" class="btn btn-info btn-sm">
+                                                    <a href="criteria.php?pageant_id=<?php echo $pageant_id; ?>&segment_id=<?php echo $segment['id']; ?>" class="btn btn-info btn-sm">
                                                         <i class="fas fa-list-check"></i> Setup Criteria
                                                     </a>
                                                 </td>

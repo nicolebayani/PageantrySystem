@@ -33,6 +33,16 @@ $pageantStmt = $db->prepare($pageantQuery);
 $pageantStmt->execute([$pageant_id]);
 $pageant = $pageantStmt->fetch(PDO::FETCH_ASSOC);
 
+// Get segment if provided
+$segment_id = isset($_GET['segment_id']) ? (int)$_GET['segment_id'] : null;
+$segment = null;
+if ($segment_id) {
+    $segmentQuery = "SELECT * FROM segments WHERE id = ? AND pageant_id = ?";
+    $segmentStmt = $db->prepare($segmentQuery);
+    $segmentStmt->execute([$segment_id, $pageant_id]);
+    $segment = $segmentStmt->fetch(PDO::FETCH_ASSOC);
+}
+
 if (!$pageant) {
     header('Location: pageants.php');
     exit();
@@ -120,9 +130,17 @@ if ($_POST) {
 }
 
 // Get all criteria for this pageant
-$query = "SELECT c.*, s.name as round_name FROM criteria c LEFT JOIN segments s ON c.round_id = s.id WHERE c.pageant_id = ? ORDER BY c.percentage DESC";
+$query = "SELECT c.*, s.name as round_name FROM criteria c LEFT JOIN segments s ON c.round_id = s.id WHERE c.pageant_id = ?";
+$params = [$pageant_id];
+
+if ($segment_id) {
+    $query .= " AND c.round_id = ?";
+    $params[] = $segment_id;
+}
+
+$query .= " ORDER BY c.percentage DESC";
 $stmt = $db->prepare($query);
-$stmt->execute([$pageant_id]);
+$stmt->execute($params);
 $criteria = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate total percentage for this round
@@ -174,6 +192,9 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
         <h3 class="text-white mb-3">
             <i class="fas fa-layer-group"></i>
             Criteria for Pageant: <?php echo htmlspecialchars($pageant['name']); ?>
+            <?php if ($segment): ?>
+                <small class="text-muted">/ Segment: <?php echo htmlspecialchars($segment['name']); ?></small>
+            <?php endif; ?>
         </h3>
         <div class="row">
             <div class="col-md-4">
@@ -186,11 +207,11 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                             <input type="hidden" name="action" value="add">
                                                         <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
                             <div class="mb-3">
-                                <label for="round_id" class="form-label">Assign to Round (Optional)</label>
+                                <label for="round_id" class="form-label">Assign to Segment (Optional)</label>
                                 <select class="form-select" id="round_id" name="round_id">
                                     <option value="">-- General Criteria --</option>
                                     <?php foreach ($rounds as $r): ?>
-                                        <option value="<?php echo $r['id']; ?>"><?php echo htmlspecialchars($r['name']); ?></option>
+                                        <option value="<?php echo $r['id']; ?>" <?php echo ($segment_id == $r['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($r['name']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -254,7 +275,7 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                                     <thead>
                                         <tr>
                                             <th>Name</th>
-                                            <th>Round</th>
+                                            <th>Segment</th>
                                             <th>Percentage</th>
                                             <th>Description</th>
                                             <th>Actions</th>
@@ -309,7 +330,7 @@ $totalPercentage = array_sum(array_column($criteria, 'percentage'));
                         <input type="hidden" name="id" id="editId">
                                                 <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
                         <div class="mb-3">
-                            <label for="editRoundId" class="form-label">Assign to Round (Optional)</label>
+                            <label for="editRoundId" class="form-label">Assign to Segment (Optional)</label>
                             <select class="form-select" id="editRoundId" name="round_id">
                                 <option value="">-- General Criteria --</option>
                                 <?php foreach ($rounds as $r): ?>

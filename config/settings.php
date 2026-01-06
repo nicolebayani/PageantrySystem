@@ -181,6 +181,7 @@ class Settings {
         .bg-pageant-accent { background: var(--pageant-accent-gradient) !important; }
         .progress-bar { background: var(--pageant-gradient) !important; }
         .badge.bg-primary { background: var(--pageant-primary) !important; }
+        .form-label { color: #343a40 !important; }
         
         /* Card styles based on settings */
         .card, .dashboard-card, .settings-card {

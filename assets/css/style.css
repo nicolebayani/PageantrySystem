@@ -197,9 +197,8 @@ body::after {
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.form-group label {
-    font-weight: 500;
-    color: #333;
+.card .form-label {
+    color: #343a40 !important;
 }
 
 .gender-options {
