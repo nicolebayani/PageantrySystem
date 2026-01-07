@@ -39,13 +39,20 @@ if (!$pageant) {
     die("Could not retrieve pageant details. Please contact the administrator.");
 }
 
+<<<<<<< HEAD
 // Get judge's scoring progress
+=======
+// Get judge's scoring progress (no gender field in candidates table)
+>>>>>>> 5e70549 (adding printing function for all segments)
 $progressQuery = "
     SELECT 
         c.id,
         c.name,
         c.age,
+<<<<<<< HEAD
         c.gender,
+=======
+>>>>>>> 5e70549 (adding printing function for all segments)
         COUNT(s.id) as scores_given,
         (SELECT COUNT(cr.id) FROM criteria cr WHERE (cr.pageant_id = ? AND cr.round_id IS NULL) OR (cr.round_id IN (SELECT id FROM segments WHERE pageant_id = ?))) as total_criteria,
         CASE 
@@ -56,13 +63,19 @@ $progressQuery = "
     FROM candidates c
     LEFT JOIN scores s ON c.id = s.candidate_id AND s.judge_id = ?
     WHERE c.pageant_id = ?
+<<<<<<< HEAD
     GROUP BY c.id, c.name, c.age, c.gender
     ORDER BY c.gender, c.name
+=======
+    GROUP BY c.id, c.name, c.age
+    ORDER BY c.name
+>>>>>>> 5e70549 (adding printing function for all segments)
 ";
 $progressStmt = $db->prepare($progressQuery);
 $progressStmt->execute([$pageant_id, $pageant_id, $pageant_id, $pageant_id, $judge_id, $pageant_id]);
 $candidates = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
+<<<<<<< HEAD
 // Group candidates by gender
 $maleCandidates = array_filter($candidates, function($candidate) {
     return $candidate['gender'] === 'Male';
@@ -71,6 +84,8 @@ $femaleCandidates = array_filter($candidates, function($candidate) {
     return $candidate['gender'] === 'Female';
 });
 
+=======
+>>>>>>> 5e70549 (adding printing function for all segments)
 // Calculate overall progress
 $totalCandidates = count($candidates);
 $completedCandidates = 0;
@@ -286,6 +301,7 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <div class="row">
+<<<<<<< HEAD
             <!-- Male Candidates Progress -->
             <div class="col-md-6 mb-4">
                 <div class="judge-dashboard-card p-4">
@@ -298,6 +314,20 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php else: ?>
                         <div style="max-height: 400px; overflow-y: auto;">
                             <?php foreach ($maleCandidates as $candidate): ?>
+=======
+            <!-- Candidate Progress (all candidates) -->
+            <div class="col-md-6 mb-4">
+                <div class="judge-dashboard-card p-4">
+                    <h5 class="mb-3 text-primary">
+                        <i class="fas fa-users"></i> Candidate Progress
+                        <span class="badge bg-primary ms-2"><?php echo count($candidates); ?></span>
+                    </h5>
+                    <?php if (empty($candidates)): ?>
+                        <p class="text-muted text-center">No candidates available for scoring.</p>
+                    <?php else: ?>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <?php foreach ($candidates as $candidate): ?>
+>>>>>>> 5e70549 (adding printing function for all segments)
                                 <div class="candidate-card card status-<?php echo strtolower(str_replace(' ', '-', $candidate['status'])); ?>">
                                     <div class="card-body py-3">
                                         <div class="d-flex justify-content-between align-items-center">
@@ -327,6 +357,7 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
+<<<<<<< HEAD
             <!-- Female Candidates Progress -->
             <div class="col-md-6 mb-4">
                 <div class="judge-dashboard-card p-4">
@@ -369,6 +400,8 @@ $recentScores = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
+=======
+>>>>>>> 5e70549 (adding printing function for all segments)
             <!-- Scoring Criteria & Recent Activity -->
             <div class="col-md-6">
                 <!-- Criteria -->
