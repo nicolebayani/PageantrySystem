@@ -150,16 +150,12 @@ $totalJudges = $judgeCountStmt->fetch(PDO::FETCH_ASSOC)['total_judges'];
     </nav>
 
     <div class="container mt-4">
-<<<<<<< HEAD
-=======
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="mb-0"><i class="fas fa-trophy me-2"></i>Overall Results</h2>
             <a href="segment_results.php" class="btn btn-outline-light">
                 <i class="fas fa-layer-group"></i> Segment Results (Printable)
             </a>
         </div>
-
->>>>>>> 5e70549 (adding printing function for all segments)
         <?php if (empty($results)): ?>
             <div class="text-center">
                 <div class="card">

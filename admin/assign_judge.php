@@ -14,7 +14,12 @@ $settings = new Settings($db);
 $currentSettings = $settings->getAll();
 
 $message = '';
-$judge_id = isset($_GET['id']) ? $_GET['id'] : die('Judge ID not specified.');
+if (!isset($_GET['id'])) {
+    $_SESSION['message'] = '<div class="alert alert-danger">Error: Judge ID not specified.</div>';
+    header('Location: judges.php');
+    exit();
+}
+$judge_id = $_GET['id'];
 
 // Fetch judge details
 $stmt = $db->prepare("SELECT * FROM users WHERE id = ? AND role = 'judge'");

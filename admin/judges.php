@@ -15,6 +15,10 @@ $settings = new Settings($db);
 $currentSettings = $settings->getAll();
 
 $message = '';
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    unset($_SESSION['message']);
+}
 
 // Handle form submissions
 if ($_POST) {

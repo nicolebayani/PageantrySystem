@@ -43,6 +43,10 @@ if ($_POST) {
                 $age = $_POST['age'];
                 $gender = $_POST['gender'];
                 $description = $_POST['description'];
+                $height = $_POST['height'];
+                $hometown = $_POST['hometown'];
+                $school_occupation = $_POST['school_occupation'];
+                $advocacy = $_POST['advocacy'];
                 
                 // Handle file upload
                 $photo = null;
@@ -71,9 +75,9 @@ if ($_POST) {
                 }
                 
                 $pageant_id_post = $_POST['pageant_id'];
-                $query = "INSERT INTO candidates (pageant_id, candidate_number, name, age, gender, description, photo) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $query = "INSERT INTO candidates (pageant_id, candidate_number, name, age, gender, description, photo, height, hometown, school_occupation, advocacy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $db->prepare($query);
-                if ($stmt->execute([$pageant_id_post, $candidate_number, $name, $age, $gender, $description, $photo])) {
+                if ($stmt->execute([$pageant_id_post, $candidate_number, $name, $age, $gender, $description, $photo, $height, $hometown, $school_occupation, $advocacy])) {
                     if (!$message) {
                         $message = '<div class="alert alert-success">Candidate added successfully!</div>';
                     }
@@ -162,18 +166,14 @@ $nextFemaleNumber = $getNextNumber('Female');
                         <form method="POST" enctype="multipart/form-data">
                                                         <input type="hidden" name="action" value="add">
                             <input type="hidden" name="pageant_id" value="<?php echo $pageant_id; ?>">
-                            <?php if ($pageant['gender_type'] === 'Both'): ?>
                             <div class="mb-3">
                                 <label for="gender" class="form-label">Gender</label>
                                 <select class="form-select" id="gender" name="gender" required onchange="updateCandidateNumber()">
-                                    <option value="">Select Gender</option>
+                                    <option value="" selected>Select Gender</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>
                             </div>
-                            <?php else: ?>
-                                <input type="hidden" id="gender" name="gender" value="<?php echo ucfirst($pageant['gender_type']); ?>">
-                            <?php endif; ?>
                             <div class="mb-3">
                                 <label for="candidate_number" class="form-label">Candidate Number</label>
                                 <div class="input-group">
@@ -195,9 +195,27 @@ $nextFemaleNumber = $getNextNumber('Female');
                                 <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
                                 <div class="form-text">Accepted formats: JPG, JPEG, PNG, GIF</div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="height" class="form-label">Height (cm)</label>
+                                    <input type="text" class="form-control" id="height" name="height">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="hometown" class="form-label">Hometown</label>
+                                    <input type="text" class="form-control" id="hometown" name="hometown">
+                                </div>
+                            </div>
                             <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                <label for="school_occupation" class="form-label">School/Occupation</label>
+                                <input type="text" class="form-control" id="school_occupation" name="school_occupation">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Short Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="advocacy" class="form-label">Advocacy</label>
+                                <textarea class="form-control" id="advocacy" name="advocacy" rows="3"></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="fas fa-plus"></i> Add Candidate
@@ -258,12 +276,13 @@ $nextFemaleNumber = $getNextNumber('Female');
                                                                 <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
                                                             </div>
                                                         </div>
-                                                        <p class="card-text text-muted small mb-3">
-                                                            <?php 
-                                                            $desc = trim($candidate['description']);
-                                                            echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
-                                                            ?>
-                                                        </p>
+                                                        <div class="candidate-details mb-3">
+                                                            <div class="detail-item"><i class="fas fa-ruler-vertical text-muted"></i> <strong>Height:</strong> <?php echo htmlspecialchars($candidate['height'] ?? 'N/A'); ?> cm</div>
+                                                            <div class="detail-item"><i class="fas fa-map-marker-alt text-muted"></i> <strong>Hometown:</strong> <?php echo htmlspecialchars($candidate['hometown'] ?? 'N/A'); ?></div>
+                                                            <div class="detail-item"><i class="fas fa-briefcase text-muted"></i> <strong>Occupation:</strong> <?php echo htmlspecialchars($candidate['school_occupation'] ?? 'N/A'); ?></div>
+                                                            <p class="card-text text-muted small mt-2"><strong>Description:</strong> <?php echo htmlspecialchars($candidate['description'] ?? 'No description'); ?></p>
+                                                            <p class="card-text text-muted small mt-2"><strong>Advocacy:</strong> <?php echo htmlspecialchars($candidate['advocacy'] ?? 'No advocacy'); ?></p>
+                                                        </div>
                                                         <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
                                                             <input type="hidden" name="action" value="delete">
                                                             <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
@@ -315,12 +334,13 @@ $nextFemaleNumber = $getNextNumber('Female');
                                                                 <span class="badge bg-light text-dark"><?php echo $candidate['age']; ?> yrs</span>
                                                             </div>
                                                         </div>
-                                                        <p class="card-text text-muted small mb-3">
-                                                            <?php 
-                                                            $desc = trim($candidate['description']);
-                                                            echo !empty($desc) ? htmlspecialchars($desc) : '<span class="text-muted">No description provided</span>';
-                                                            ?>
-                                                        </p>
+                                                        <div class="candidate-details mb-3">
+                                                            <div class="detail-item"><i class="fas fa-ruler-vertical text-muted"></i> <strong>Height:</strong> <?php echo htmlspecialchars($candidate['height'] ?? 'N/A'); ?> cm</div>
+                                                            <div class="detail-item"><i class="fas fa-map-marker-alt text-muted"></i> <strong>Hometown:</strong> <?php echo htmlspecialchars($candidate['hometown'] ?? 'N/A'); ?></div>
+                                                            <div class="detail-item"><i class="fas fa-briefcase text-muted"></i> <strong>Occupation:</strong> <?php echo htmlspecialchars($candidate['school_occupation'] ?? 'N/A'); ?></div>
+                                                            <p class="card-text text-muted small mt-2"><strong>Description:</strong> <?php echo htmlspecialchars($candidate['description'] ?? 'No description'); ?></p>
+                                                            <p class="card-text text-muted small mt-2"><strong>Advocacy:</strong> <?php echo htmlspecialchars($candidate['advocacy'] ?? 'No advocacy'); ?></p>
+                                                        </div>
                                                         <form method="POST" class="d-flex justify-content-end" onsubmit="return confirm('Are you sure you want to delete this candidate?')">
                                                             <input type="hidden" name="action" value="delete">
                                                             <input type="hidden" name="id" value="<?php echo $candidate['id']; ?>">
@@ -433,8 +453,11 @@ $nextFemaleNumber = $getNextNumber('Female');
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // If gender is a hidden input, it's a single-gender pageant, so set the number on load.
-            if (document.getElementById('gender').type === 'hidden') {
+            // Pre-select gender if the pageant is not for 'Both'
+            const genderInput = document.getElementById('gender');
+            const pageantGender = '<?php echo $pageant['gender_type']; ?>';
+            if (pageantGender !== 'Both') {
+                genderInput.value = pageantGender;
                 updateCandidateNumber();
             }
         });
