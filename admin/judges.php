@@ -28,6 +28,10 @@ if ($_POST) {
                 $username = $_POST['username'];
                 $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
                 $full_name = $_POST['full_name'];
+                $profession = $_POST['profession'];
+                $contact_number = $_POST['contact_number'];
+                $email = $_POST['email'];
+                $bio = $_POST['bio'];
                 
                 // Check if username already exists
                 $checkQuery = "SELECT id FROM users WHERE username = ?";
@@ -37,9 +41,9 @@ if ($_POST) {
                 if ($checkStmt->fetch()) {
                     $message = '<div class="alert alert-danger">Username already exists!</div>';
                 } else {
-                    $query = "INSERT INTO users (username, password, role, full_name) VALUES (?, ?, 'judge', ?)";
+                    $query = "INSERT INTO users (username, password, role, full_name, profession, contact_number, email, bio) VALUES (?, ?, 'judge', ?, ?, ?, ?, ?)";
                     $stmt = $db->prepare($query);
-                    if ($stmt->execute([$username, $password, $full_name])) {
+                    if ($stmt->execute([$username, $password, $full_name, $profession, $contact_number, $email, $bio])) {
                         $message = '<div class="alert alert-success">Judge added successfully!</div>';
                     } else {
                         $message = '<div class="alert alert-danger">Error adding judge.</div>';
@@ -80,6 +84,49 @@ $judges = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         <?php echo $settings->generateCSS(); ?>
+
+        .judge-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .judge-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: calc(50% - 10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .judge-card h5 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .judge-card .details p {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .judge-card .details strong {
+            color: #333;
+            margin-right: 8px;
+        }
+        .judge-card .bio {
+            font-style: italic;
+            color: #555;
+            margin-top: 10px;
+        }
+        .judge-card .actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            align-self: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +168,22 @@ $judges = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" class="form-control" id="full_name" name="full_name" required>
                             </div>
                             <div class="mb-3">
+                                <label for="profession" class="form-label">Profession</label>
+                                <input type="text" class="form-control" id="profession" name="profession">
+                            </div>
+                            <div class="mb-3">
+                                <label for="contact_number" class="form-label">Contact Number</label>
+                                <input type="text" class="form-control" id="contact_number" name="contact_number">
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">Short Bio</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
                                 <label for="username" class="form-label">Username</label>
                                 <input type="text" class="form-control" id="username" name="username" required>
                             </div>
@@ -157,7 +220,8 @@ $judges = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <tr>
                                             <th>Full Name</th>
                                             <th>Username</th>
-                                            <th>Created</th>
+                                            <th>Profession</th>
+                                            <th>Contact</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -166,7 +230,11 @@ $judges = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <tr>
                                                 <td><?php echo htmlspecialchars($judge['full_name']); ?></td>
                                                 <td><?php echo htmlspecialchars($judge['username']); ?></td>
-                                                <td><?php echo date('M j, Y', strtotime($judge['created_at'])); ?></td>
+                                                <td><?php echo htmlspecialchars($judge['profession'] ?? ''); ?></td>
+                                                <td>
+                                                    <?php echo htmlspecialchars($judge['email'] ?? ''); ?><br>
+                                                    <?php echo htmlspecialchars($judge['contact_number'] ?? ''); ?>
+                                                </td>
                                                 <td>
                                                     <a href="assign_judge.php?id=<?php echo $judge['id']; ?>" class="btn btn-info btn-sm">
                                                         <i class="fas fa-user-tag"></i> Assign
